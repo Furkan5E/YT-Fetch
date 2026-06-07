@@ -8,6 +8,7 @@ CONFIG_FILE = "config.txt"
 DEFAULT_CONFIG = {
     "type": "mp3",        #mp3 or mp4
     "quality": "192",     #128, 192, 320
+    "resolution": "1080", #1080, 720, 480, best
     "metadata": "true",   #true or false
     "ffmpeg_path": "auto" #auto or file path
 }
@@ -79,7 +80,11 @@ def build_ydl_opts(config):
 
     #handle type
     if config['type'] == 'mp4':
-        opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+        res = config.get('resolution', '1080')
+        if res == 'best':
+            opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+        else:
+            opts['format'] = f'bestvideo[ext=mp4][height<={res}]+bestaudio[ext=m4a]/best[ext=mp4][height<={res}]/best'
     else:
         #default to mp3
         opts['format'] = 'bestaudio/best'
