@@ -3,11 +3,12 @@ import os
 CONFIG_FILE = "config.txt"
 
 DEFAULT_CONFIG = {
-    "type": "mp3",          #mp3 or mp4
-    "quality": "192",       #128, 192, 320
-    "resolution": "1080",   #1080, 720, 480, best
-    "metadata": "true",     #true or false
-    "ffmpeg_path": "auto"   #auto or file path
+    "type": "mp3",
+    "quality": "192",
+    "resolution": "1080",
+    "metadata": "true",
+    "ffmpeg_path": "auto",
+    "allow_playlists": "false"
 }
 
 VALID_OPTIONS = {
@@ -15,6 +16,7 @@ VALID_OPTIONS = {
     "quality": ["128", "192", "256", "320"],
     "resolution": ["480", "720", "1080", "1440", "2160", "best"],
     "metadata": ["true", "false"],
+    "allow_playlists": ["true", "false"]
 }
 
 def load_config():
