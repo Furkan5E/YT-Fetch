@@ -1,0 +1,3 @@
+type=mp3
+quality=192
+metadata=true
