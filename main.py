@@ -8,7 +8,8 @@ CONFIG_FILE = "config.txt"
 DEFAULT_CONFIG = {
     "type": "mp3",        #mp3 or mp4
     "quality": "192",     #128, 192, 320
-    "metadata": "true"    #true or false
+    "metadata": "true",   #true or false
+    "ffmpeg_path": "auto" #auto or file path
 }
 
 def load_config():
@@ -37,22 +38,36 @@ def save_config(config):
             f.write(f"{key}={value}\n")
 
 
-def get_ffmpeg_path():
-    """Locates ffmpeg in the current directory or system PATH."""
+def get_ffmpeg_path(config):
+    """Locates ffmpeg via config override, local directory, or system PATH."""
+    custom_path = config.get('ffmpeg_path', 'auto')
+    
+    #1 check if valid path in config
+    if custom_path != 'auto':
+        if os.path.exists(custom_path):
+            return custom_path
+        else:
+            print(f"\n[Warning] Configured ffmpeg path '{custom_path}' not found.")
+            print("          Falling back to auto-detection...")
+    
+    #2 check local directory
     local_path = './ffmpeg.exe' if platform.system() == 'Windows' else './ffmpeg'
     if os.path.exists(local_path):
         return local_path
     
+    #3 check global system PATH
     system_path = shutil.which("ffmpeg")
     if system_path:
         return system_path
-        
-    print("\n[Error] ffmpeg not found. Please install it or place it in this folder.")
+    
+    #4 not found
+    print("\n[Error] ffmpeg not found.")
+    print("Please install it, place it in this folder, or set ffmpeg_path in config.txt.")
     sys.exit(1)
 
 def build_ydl_opts(config):
     """Dynamically builds yt-dlp options based on the current config."""
-    ffmpeg_path = get_ffmpeg_path()
+    ffmpeg_path = get_ffmpeg_path(config)
     
     #base options
     opts = {
