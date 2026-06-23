@@ -31,7 +31,7 @@ def get_ffmpeg_path(config):
             return custom_path
         else:
             print(f"\n[Warning] Configured ffmpeg path '{custom_path}' not found.")
-            print("Falling back to auto-detection.")
+            print("          Falling back to auto-detection...")
     
     #2 check local directory
     local_path = './ffmpeg.exe' if platform.system() == 'Windows' else './ffmpeg'
@@ -53,9 +53,13 @@ def build_ydl_opts(config):
     ffmpeg_path = get_ffmpeg_path(config)
     allow_playlists = str(config.get('allow_playlists', 'false')).strip().lower()
     
+    #check if output directory exists
+    out_dir = config.get('output_dir', os.path.join(os.getcwd(), 'downloads'))
+    os.makedirs(out_dir, exist_ok=True)
+    
     #base options
     opts = {
-        'outtmpl': '%(title)s.%(ext)s',
+        'outtmpl': os.path.join(out_dir, '%(title)s.%(ext)s'),
         'ffmpeg_location': ffmpeg_path,
         'quiet': True,
         'no_warnings': True,

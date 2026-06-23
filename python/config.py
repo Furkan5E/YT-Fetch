@@ -8,7 +8,8 @@ DEFAULT_CONFIG = {
     "resolution": "1080",
     "metadata": "true",
     "ffmpeg_path": "auto",
-    "allow_playlists": "false"
+    "allow_playlists": "false",
+    "output_dir": os.path.join(os.getcwd(), "downloads")
 }
 
 VALID_OPTIONS = {

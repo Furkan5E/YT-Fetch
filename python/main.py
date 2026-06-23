@@ -20,10 +20,12 @@ def handle_config_command(parts, current_config):
     #case 3: ".config key value" -> update key
     elif len(parts) >= 3:
         key = parts[1].lower()
-        value = " ".join(parts[2:]).lower()
+        value = " ".join(parts[2:])
+        #preserve casing for paths
+        if key not in ['ffmpeg_path', 'output_dir']:
+            value = value.lower()
         
         if key in current_config:
-            # Uses the new validator in config.py
             success = config.validate_and_update(current_config, key, value)
             if success:
                 if key == "quality":
