@@ -31,7 +31,13 @@ def load_config():
         for line in f:
             if '=' in line and not line.strip().startswith('#'):
                 key, value = line.split('=', 1)
-                config[key.strip().lower()] = value.strip().lower()
+                clean_key = key.strip().lower()
+                clean_val = value.strip()
+                
+                if clean_key not in ['ffmpeg_path', 'output_dir']:
+                    clean_val = clean_val.lower()
+                    
+                config[clean_key] = clean_val
                 
     #ensure missing keys are replaced with defaults as fallback
     for k, v in DEFAULT_CONFIG.items():
