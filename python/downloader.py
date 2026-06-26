@@ -70,6 +70,13 @@ def build_ydl_opts(config):
         'postprocessors': []
     }
 
+    #handle sponsor removal
+    if config.get('remove_sponsors', 'true') == 'true':
+        opts['postprocessors'].append({
+            'key': 'SponsorBlock',
+            'categories': ['sponsor', 'interaction', 'intro', 'outro']
+        })
+
     #handle type
     if config['type'] == 'mp4':
         res = config.get('resolution', '1080')
