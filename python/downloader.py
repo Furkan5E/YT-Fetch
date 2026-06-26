@@ -97,8 +97,7 @@ def build_ydl_opts(config):
     if config['metadata'] == 'true':
         opts['writethumbnail'] = True
         opts['postprocessors'].append({'key': 'FFmpegMetadata'})
-        if config['type'] == 'mp3':
-            opts['postprocessors'].append({'key': 'EmbedThumbnail'})
+        opts['postprocessors'].append({'key': 'EmbedThumbnail'})
 
     return opts
 

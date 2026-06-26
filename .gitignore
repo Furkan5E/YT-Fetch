@@ -11,3 +11,4 @@ wheels/
 
 # local ffmpeg
 ffmpeg.exe
+ffprobe.exe
