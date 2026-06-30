@@ -70,6 +70,15 @@ def build_ydl_opts(config):
         'postprocessors': []
     }
 
+    #handle lyrics
+    if config.get('embed_lyrics', 'false') == 'true':
+        opts['writesubtitles'] = True
+        opts['subtitleslangs'] = ['en', 'orig'] 
+        opts['postprocessors'].extend([
+            {'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'},
+            {'key': 'FFmpegEmbedSubtitle'}
+        ])
+
     #handle sponsor removal
     if config.get('remove_sponsors', 'true') == 'true':
         opts['postprocessors'].append({

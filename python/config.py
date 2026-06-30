@@ -10,7 +10,8 @@ DEFAULT_CONFIG = {
     "ffmpeg_path": "auto",
     "allow_playlists": "false",
     "output_dir": os.path.join(os.getcwd(), "downloads"),
-    "remove_sponsors": "true"
+    "remove_sponsors": "true",
+    "embed_lyrics": "false"
 }
 
 VALID_OPTIONS = {
@@ -19,7 +20,8 @@ VALID_OPTIONS = {
     "resolution": ["480", "720", "1080", "1440", "2160", "best"],
     "metadata": ["true", "false"],
     "allow_playlists": ["true", "false"],
-    "remove_sponsors": ["true", "false"]
+    "remove_sponsors": ["true", "false"],
+    "embed_lyrics": ["true", "false"]
 }
 
 def load_config():
