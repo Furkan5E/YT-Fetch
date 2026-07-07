@@ -1,6 +1,0 @@
-type=mp3
-quality=192
-resolution=1080
-metadata=true
-ffmpeg_path=auto
-allow_playlists=false

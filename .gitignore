@@ -12,3 +12,9 @@ wheels/
 # local ffmpeg
 ffmpeg.exe
 ffprobe.exe
+
+# config
+config.txt
+
+# Downloaded Media
+downloads/
