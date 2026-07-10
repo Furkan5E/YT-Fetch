@@ -1,5 +1,6 @@
 import config
 import downloader
+import os
 
 def handle_config_command(parts, current_config):
     """Parses and executes .config commands."""
@@ -54,7 +55,23 @@ def main():
             print("Terminating application.")
             break
             
-        #command: config
+        #command: batch
+        elif user_input.lower() == 'batch':
+            if os.path.exists("batch.txt"):
+                with open("batch.txt", "r") as f:
+                    links = [line.strip() for line in f if line.strip()]
+                
+                if not links:
+                    print("\n[Error] batch.txt is empty.")
+                else:
+                    print(f"\nFound {len(links)} links in batch.txt. Starting batch process...")
+                    for link in links:
+                        downloader.download_video(link, current_config)
+                    print("\nBatch processing complete!")
+            else:
+                print("\n[Error] batch.txt not found. Please create it in the same folder and add links.")
+                
+        # Command: Config
         elif user_input.lower().startswith('.config'):
             parts = user_input.split()
             handle_config_command(parts, current_config)

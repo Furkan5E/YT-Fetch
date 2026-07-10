@@ -19,13 +19,14 @@ Download FFmpeg from their [official website](https://ffmpeg.org/download.html)
 
 ```bash
 git clone https://github.com/Furkan5E/yt-fetch
-cd yt-fetch/python
+cd yt-fetch
 python main.py
 ```
 
 ## Commands
 
 - **Paste a URL:** begins downloading the media based on your current settings.
+- **batch** downloads all in batch.txt with current settings
 - **.config:** Displays your current active settings.
 - **.config [key]:** Displays the value of a specific setting (e.g., .config quality).
 - **.config [key] [value]:** Updates and saves a setting (e.g., .config type mp4 or .config resolution 720).
