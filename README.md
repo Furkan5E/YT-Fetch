@@ -1,6 +1,8 @@
 # YT Fetch
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat-square&logo=python)
+![uv](https://img.shields.io/badge/Build-uv-purple?style=flat-square)
+![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![FFmpeg](https://img.shields.io/badge/Powered_by-FFmpeg-414141?style=flat-square&logo=ffmpeg)
 ![License](https://img.shields.io/badge/License-MIT-success?style=flat-square)
 
@@ -11,8 +13,6 @@ A modular, interactive command line application for downloading audio and video 
 * **Python 3.x**
 * **[FFmpeg](https://ffmpeg.org/download.html)**: FFmpeg for media processing and FFprobe for metadata embedding
 
----
-
 ## Installation
 Clone the repository and sync the dependencies.
 ```bash
@@ -22,7 +22,17 @@ uv sync
 ```
 Run the main script.
 ```bash
-uv run main.py
+uv run python src/main.py
+```
+---
+## Docker
+Build the image.
+```bash
+docker build -t yt-fetch .
+```
+Run the container.
+```bash
+docker run -it -v "${PWD}:/app" yt-fetch
 ```
 ---
 ## Commands
