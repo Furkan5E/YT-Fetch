@@ -1,7 +1,7 @@
 [project]
 name = "yt-fetch"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "A interactive command line interface (CLI) for downloading YouTube videos and audio. Built with Python and yt-dlp."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
