@@ -5,5 +5,5 @@ description = "A interactive command line interface (CLI) for downloading YouTub
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "yt-dlp>=2026.7.4",
+    "yt-dlp>=2026.8.19",
 ]
