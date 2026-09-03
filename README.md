@@ -1,10 +1,12 @@
 # YT Fetch
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat-square&logo=python)
-![uv](https://img.shields.io/badge/Build-uv-purple?style=flat-square)
-![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat-square&logo=docker&logoColor=white)
-![FFmpeg](https://img.shields.io/badge/Powered_by-FFmpeg-414141?style=flat-square&logo=ffmpeg)
-![License](https://img.shields.io/badge/License-MIT-success?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+![uv](https://img.shields.io/badge/Build-uv-purple?)
+![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker)
+![FFmpeg](https://img.shields.io/badge/Powered_by-FFmpeg-414141?logo=ffmpeg)
+![Licence](https://img.shields.io/badge/Licence-MIT-blue)
+[![Build Wheel](https://github.com/Furkan5E/YT-Fetch/actions/workflows/build-wheel.yaml/badge.svg)](https://github.com/Furkan5E/YT-Fetch/actions/workflows/build-wheel.yaml)
+[![Build Docker](https://github.com/Furkan5E/YT-Fetch/actions/workflows/build-docker.yaml/badge.svg)](https://github.com/Furkan5E/YT-Fetch/actions/workflows/build-docker.yaml)
 
 A modular, interactive command line application for downloading audio and video from YouTube. Powered by `yt-dlp` and `FFmpeg`.
 
@@ -35,6 +37,10 @@ docker build -t yt-fetch .
 Run the container.
 ```bash
 docker run -it -v "${PWD}:/app" yt-fetch
+```
+Pre-built container:
+```bash
+docker run -it --rm -v "${PWD}:/app" ghcr.io/furkan5e/yt-fetch:latest
 ```
 ---
 ## Commands
