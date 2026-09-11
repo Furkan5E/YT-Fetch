@@ -81,9 +81,17 @@ def build_ydl_opts(config):
 
     #handle sponsor removal
     if config.get('remove_sponsors', 'true') == 'true':
+        sponsor_categories = ['sponsor', 'interaction', 'intro', 'outro']
+        #fetches and marks the segments as chapters
         opts['postprocessors'].append({
             'key': 'SponsorBlock',
-            'categories': ['sponsor', 'interaction', 'intro', 'outro']
+            'categories': sponsor_categories,
+            'when': 'after_filter'
+        })
+        opts['postprocessors'].append({
+            'key': 'ModifyChapters',
+            'remove_sponsor_segments': sponsor_categories,
+            'force_keyframes': False
         })
 
     #handle type
