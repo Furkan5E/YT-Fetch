@@ -1,8 +1,12 @@
 import yt_dlp
-import sys
 import os
 import platform
 import shutil
+
+
+class FFmpegNotFoundError(Exception):
+    """Raised when ffmpeg cannot be located via config, local dir, or PATH."""
+    pass
 
 class SilentLogger:
     def debug(self, msg):
@@ -44,9 +48,10 @@ def get_ffmpeg_path(config):
         return system_path
     
     #4 not found
-    print("\n[Error] ffmpeg not found.")
-    print("Please install it, place it in this folder, or set ffmpeg_path in config.txt.")
-    sys.exit(1)
+    raise FFmpegNotFoundError(
+        "ffmpeg not found. Please install it, place it in this folder, "
+        "or set ffmpeg_path in config.txt."
+    )
 
 def build_ydl_opts(config):
     """Dynamically builds yt-dlp options based on the current config."""
@@ -120,7 +125,12 @@ def build_ydl_opts(config):
 
 def download_video(video_url, config):
     """Executes the download process."""
-    ydl_opts = build_ydl_opts(config)
+    try:
+        ydl_opts = build_ydl_opts(config)
+    except FFmpegNotFoundError as e:
+        print(f"\n[Error] {e}")
+        return
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"\nFetching data for: {video_url}...")
