@@ -14,10 +14,11 @@ WORKDIR /app
 
 # Copy dependency files and install them
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen
+RUN uv sync --frozen --no-install-project
 
 # Copy the rest of the application code
 COPY . .
+RUN uv sync --frozen
 
 # Run the interactive CLI using uv
 ENTRYPOINT ["uv", "run", "python", "src/main.py"]
