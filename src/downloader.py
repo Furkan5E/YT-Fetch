@@ -8,6 +8,9 @@ class FFmpegNotFoundError(Exception):
     """Raised when ffmpeg cannot be located via config, local dir, or PATH."""
     pass
 
+
+_ffmpeg_cache = {'source': None, 'resolved': None}
+
 class SilentLogger:
     def debug(self, msg):
         pass
@@ -28,7 +31,16 @@ def minimalist_progress_hook(d):
 def get_ffmpeg_path(config):
     """Locates ffmpeg via config override, local directory, or system PATH."""
     custom_path = config.get('ffmpeg_path', 'auto')
-    
+
+    if _ffmpeg_cache['source'] == custom_path and _ffmpeg_cache['resolved']:
+        return _ffmpeg_cache['resolved']
+
+    resolved = _resolve_ffmpeg_path(custom_path)
+    _ffmpeg_cache['source'] = custom_path
+    _ffmpeg_cache['resolved'] = resolved
+    return resolved
+
+def _resolve_ffmpeg_path(custom_path):
     #1 check if valid path in config
     if custom_path != 'auto':
         if os.path.exists(custom_path):
