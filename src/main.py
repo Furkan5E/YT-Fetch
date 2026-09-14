@@ -65,9 +65,18 @@ def main():
                     print("\n[Error] batch.txt is empty.")
                 else:
                     print(f"\nFound {len(links)} links in batch.txt. Starting batch process...")
+                    succeeded = 0
+                    failed_links = []
                     for link in links:
-                        downloader.download_video(link, current_config)
-                    print("\nBatch processing complete!")
+                        if downloader.download_video(link, current_config):
+                            succeeded += 1
+                        else:
+                            failed_links.append(link)
+                    print(f"\nBatch processing complete! {succeeded}/{len(links)} succeeded.")
+                    if failed_links:
+                        print("Failed links:")
+                        for link in failed_links:
+                            print(f"  - {link}")
             else:
                 print("\n[Error] batch.txt not found. Please create it in the same folder and add links.")
                 
