@@ -1,6 +1,7 @@
 import os
 
 CONFIG_FILE = "config.txt"
+CASE_SENSITIVE_KEYS = ['ffmpeg_path', 'output_dir']
 
 DEFAULT_CONFIG = {
     "type": "mp3",
@@ -38,7 +39,7 @@ def load_config():
                 clean_key = key.strip().lower()
                 clean_val = value.strip()
                 
-                if clean_key not in ['ffmpeg_path', 'output_dir']:
+                if clean_key not in CASE_SENSITIVE_KEYS:
                     clean_val = clean_val.lower()
                     
                 config[clean_key] = clean_val

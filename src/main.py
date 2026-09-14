@@ -23,7 +23,7 @@ def handle_config_command(parts, current_config):
         key = parts[1].lower()
         value = " ".join(parts[2:])
         #preserve casing for paths
-        if key not in ['ffmpeg_path', 'output_dir']:
+        if key not in config.CASE_SENSITIVE_KEYS:
             value = value.lower()
         
         if key in current_config:
