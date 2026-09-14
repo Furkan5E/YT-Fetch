@@ -1,6 +1,6 @@
 [project]
 name = "yt-fetch"
-version = "1.1.0"
+version = "1.2.0"
 description = "A interactive command line interface (CLI) for downloading YouTube videos and audio. Built with Python and yt-dlp."
 readme = "README.md"
 requires-python = ">=3.14"
@@ -17,4 +17,5 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-py-modules = ["main", "config", "downloader"]
+py-modules = ["main", "config", "cli", "batch", "repl"]
+packages = ["downloader"]
