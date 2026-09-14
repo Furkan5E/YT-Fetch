@@ -142,6 +142,9 @@ def download_video(video_url, config):
     except FFmpegNotFoundError as e:
         print(f"\n[Error] {e}")
         return False
+    except Exception as e:
+        print(f"\n[Error] Failed to prepare download options: {e}")
+        return False
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
