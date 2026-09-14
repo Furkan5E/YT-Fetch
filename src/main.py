@@ -1,6 +1,56 @@
+import argparse
 import config
 import downloader
 import os
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        prog="yt-fetch",
+        description="Interactive and scriptable YouTube downloader."
+    )
+    parser.add_argument(
+        "url",
+        nargs="?",
+        default=None,
+        help="A video URL to download once, non-interactively, then exit."
+    )
+    parser.add_argument(
+        "--batch",
+        nargs="?",
+        const="batch.txt",
+        default=None,
+        metavar="FILE",
+        help="Download every link in FILE (default: batch.txt), then exit."
+    )
+    return parser.parse_args()
+
+def run_batch(batch_file, current_config):
+    """Downloads every link in batch_file. Returns True if all succeeded."""
+    if not os.path.exists(batch_file):
+        print(f"\n[Error] {batch_file} not found. Please create it and add links.")
+        return False
+
+    with open(batch_file, "r") as f:
+        links = [line.strip() for line in f if line.strip()]
+
+    if not links:
+        print(f"\n[Error] {batch_file} is empty.")
+        return False
+
+    print(f"\nFound {len(links)} links in {batch_file}. Starting batch process...")
+    succeeded = 0
+    failed_links = []
+    for link in links:
+        if downloader.download_video(link, current_config):
+            succeeded += 1
+        else:
+            failed_links.append(link)
+    print(f"\nBatch processing complete! {succeeded}/{len(links)} succeeded.")
+    if failed_links:
+        print("Failed links:")
+        for link in failed_links:
+            print(f"  - {link}")
+    return not failed_links
 
 def handle_config_command(parts, current_config):
     """Parses and executes .config commands."""
@@ -38,7 +88,17 @@ def handle_config_command(parts, current_config):
 
 
 def main():
+    args = parse_args()
     current_config = config.load_config()
+    #yt-fetch <url>
+    if args.url:
+        success = downloader.download_video(args.url, current_config)
+        raise SystemExit(0 if success else 1)
+    #yt-fetch --batch links.txt
+    if args.batch:
+        success = run_batch(args.batch, current_config)
+        raise SystemExit(0 if success else 1)
+
     print("YT Fetch")
     while True:
         try:
@@ -57,28 +117,7 @@ def main():
             
         #command: batch
         elif user_input.lower() == 'batch':
-            if os.path.exists("batch.txt"):
-                with open("batch.txt", "r") as f:
-                    links = [line.strip() for line in f if line.strip()]
-                
-                if not links:
-                    print("\n[Error] batch.txt is empty.")
-                else:
-                    print(f"\nFound {len(links)} links in batch.txt. Starting batch process...")
-                    succeeded = 0
-                    failed_links = []
-                    for link in links:
-                        if downloader.download_video(link, current_config):
-                            succeeded += 1
-                        else:
-                            failed_links.append(link)
-                    print(f"\nBatch processing complete! {succeeded}/{len(links)} succeeded.")
-                    if failed_links:
-                        print("Failed links:")
-                        for link in failed_links:
-                            print(f"  - {link}")
-            else:
-                print("\n[Error] batch.txt not found. Please create it in the same folder and add links.")
+            run_batch("batch.txt", current_config)
                 
         # Command: Config
         elif user_input.lower().startswith('.config'):
