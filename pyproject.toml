@@ -20,3 +20,11 @@ build-backend = "setuptools.build_meta"
 package-dir = {"" = "src"}
 py-modules = ["main", "config", "cli", "batch", "repl"]
 packages = ["downloader"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
