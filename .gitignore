@@ -9,9 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# local ffmpeg
-ffmpeg.exe
-ffprobe.exe
+*.exe
 
 # config
 config.txt
