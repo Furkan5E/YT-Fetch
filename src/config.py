@@ -1,6 +1,43 @@
 import os
+import platform
 
-CONFIG_FILE = "config.txt"
+def _is_writable(path):
+    """Tests whether path can actually be written to, not just whether it exists."""
+    test_file = os.path.join(path, '.yt_fetch_write_test')
+    try:
+        with open(test_file, 'w') as f:
+            f.write('')
+        os.remove(test_file)
+        return True
+    except OSError:
+        return False
+
+def _user_config_dir():
+    """The OS-standard per-user config location, used as a fallback when the
+    source folder isn't writable"""
+    system = platform.system()
+    if system == 'Windows':
+        base = os.environ.get('APPDATA', os.path.expanduser('~'))
+    elif system == 'Darwin':
+        base = os.path.expanduser('~/Library/Application Support')
+    else:
+        base = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+    path = os.path.join(base, 'yt-fetch')
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def _get_base_dir():
+    """Where config.txt, batch.txt, and the default downloads folder live."""
+    source_dir = os.path.dirname(os.path.abspath(__file__))
+    if _is_writable(source_dir):
+        return source_dir
+    return _user_config_dir()
+
+BASE_DIR = _get_base_dir()
+CONFIG_FILE = os.path.join(BASE_DIR, "config.txt")
+BATCH_FILE = os.path.join(BASE_DIR, "batch.txt")
+
+#keys whose values should keep their original casing (they're paths, not enum-like options)
 CASE_SENSITIVE_KEYS = ['ffmpeg_path', 'output_dir']
 
 DEFAULT_CONFIG = {
@@ -10,7 +47,7 @@ DEFAULT_CONFIG = {
     "metadata": "true",
     "ffmpeg_path": "auto",
     "allow_playlists": "false",
-    "output_dir": os.path.join(os.getcwd(), "downloads"),
+    "output_dir": os.path.join(BASE_DIR, "downloads"),
     "remove_sponsors": "true",
     "embed_lyrics": "false"
 }

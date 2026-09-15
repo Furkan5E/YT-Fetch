@@ -22,10 +22,10 @@ def parse_args():
     parser.add_argument(
         "--batch",
         nargs="?",
-        const="batch.txt",
+        const=config.BATCH_FILE,
         default=None,
         metavar="FILE",
-        help="Download every link in FILE (default: batch.txt), then exit."
+        help=f"Download every link in FILE (default: {config.BATCH_FILE}), then exit."
     )
     for key in OVERRIDABLE_KEYS:
         flag = "--" + key.replace("_", "-")

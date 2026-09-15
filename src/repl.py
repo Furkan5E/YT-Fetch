@@ -57,9 +57,9 @@ def run_repl(current_config):
 
         #command: batch
         elif user_input.lower() == 'batch':
-            run_batch("batch.txt", current_config)
+            run_batch(config.BATCH_FILE, current_config)
 
-        #command: config
+        # Command: Config
         elif user_input.lower().startswith('.config'):
             parts = user_input.split()
             handle_config_command(parts, current_config)
