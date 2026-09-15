@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.11' 
+          python-version: '3.14' 
 
       - name: Build Python packages
         run: uv build
