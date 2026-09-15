@@ -19,13 +19,14 @@ def parse_args():
         default=None,
         help="A video URL to download once, non-interactively, then exit."
     )
+    batch_file = config.get_batch_file()
     parser.add_argument(
         "--batch",
         nargs="?",
-        const=config.BATCH_FILE,
+        const=batch_file,
         default=None,
         metavar="FILE",
-        help=f"Download every link in FILE (default: {config.BATCH_FILE}), then exit."
+        help=f"Download every link in FILE (default: {batch_file}), then exit."
     )
     for key in OVERRIDABLE_KEYS:
         flag = "--" + key.replace("_", "-")

@@ -57,7 +57,7 @@ def run_repl(current_config):
 
         #command: batch
         elif user_input.lower() == 'batch':
-            run_batch(config.BATCH_FILE, current_config)
+            run_batch(config.get_batch_file(), current_config)
 
         # Command: Config
         elif user_input.lower().startswith('.config'):
