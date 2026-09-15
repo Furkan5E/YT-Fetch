@@ -15,7 +15,7 @@ A modular, interactive command line application for downloading audio and video 
 ---
 ## Prerequisites
 * **Python 3.x**
-* **[FFmpeg](https://ffmpeg.org/download.html)**: FFmpeg for media processing and FFprobe for metadata embedding
+* **FFmpeg** (optional): used for media processing and metadata embedding. If it's not found on your system, in the app folder, or in `config.txt`, YT Fetch automatically downloads a static build for you on first run.
 
 ## Installation
 Clone the repository and sync the dependencies.
