@@ -21,4 +21,4 @@ COPY . .
 RUN uv sync --frozen
 
 # Run the interactive CLI using uv
-ENTRYPOINT ["uv", "run", "python", "src/main.py"]
+ENTRYPOINT ["uv", "run", "yt-fetch"]

@@ -1,6 +1,6 @@
 import argparse
 
-import config
+from . import config
 
 #config keys that can be overridden with CLI flags
 OVERRIDABLE_KEYS = [

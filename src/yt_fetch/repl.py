@@ -1,6 +1,6 @@
-import config
-import downloader
-from batch import run_batch
+from . import config
+from . import downloader
+from .batch import run_batch
 
 
 def handle_config_command(parts, current_config):

@@ -1,6 +1,6 @@
 import pytest
 
-import config
+from yt_fetch import config
 
 
 @pytest.fixture

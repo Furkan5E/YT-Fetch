@@ -1,6 +1,6 @@
 import os
 
-import downloader
+from . import downloader
 
 
 def run_batch(batch_file, current_config):

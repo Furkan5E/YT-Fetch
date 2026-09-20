@@ -2,8 +2,8 @@ import platform
 
 import pytest
 
-from downloader import ffmpeg as ffmpeg_module
-from downloader.ffmpeg import FFmpegNotFoundError
+from yt_fetch.downloader import ffmpeg as ffmpeg_module
+from yt_fetch.downloader.ffmpeg import FFmpegNotFoundError
 
 LOCAL_PATH = "./ffmpeg.exe" if platform.system() == "Windows" else "./ffmpeg"
 

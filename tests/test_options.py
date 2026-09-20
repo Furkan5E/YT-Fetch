@@ -1,7 +1,7 @@
 import pytest
 
-from downloader import options as options_module
-from downloader.options import build_ydl_opts
+from yt_fetch.downloader import options as options_module
+from yt_fetch.downloader.options import build_ydl_opts
 
 
 @pytest.fixture(autouse=True)

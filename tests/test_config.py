@@ -1,6 +1,6 @@
 import os
 
-import config
+from yt_fetch import config
 
 
 def test_load_config_creates_file_with_defaults(isolated_config):

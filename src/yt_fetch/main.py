@@ -1,8 +1,8 @@
-import config
-import downloader
-from cli import parse_args, apply_overrides
-from batch import run_batch
-from repl import run_repl
+from . import config
+from . import downloader
+from .cli import parse_args, apply_overrides
+from .batch import run_batch
+from .repl import run_repl
 
 
 def main():

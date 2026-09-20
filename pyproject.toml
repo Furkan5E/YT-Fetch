@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-yt-fetch = "main:main"
+yt-fetch = "yt_fetch.main:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -18,8 +18,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-py-modules = ["main", "config", "cli", "batch", "repl"]
-packages = ["downloader"]
+packages = ["yt_fetch", "yt_fetch.downloader"]
 
 [dependency-groups]
 dev = [

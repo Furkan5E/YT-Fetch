@@ -28,7 +28,7 @@ uv sync
 ```
 Run the main script.
 ```bash
-uv run python src/main.py
+uv run yt-fetch
 ```
 ---
 ## Testing

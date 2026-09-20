@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-import cli
+from yt_fetch import cli
 
 
 def _args(**overrides):
