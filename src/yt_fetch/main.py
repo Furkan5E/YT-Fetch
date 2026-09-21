@@ -7,7 +7,8 @@ from .repl import run_repl
 
 def main():
     args = parse_args()
-    current_config = apply_overrides(config.load_config(), args)
+    saved_config = config.load_config()
+    current_config = apply_overrides(saved_config, args)
 
     #non-interactive: a URL was passed directly, e.g. `yt-fetch <url>`
     if args.url:
@@ -20,7 +21,7 @@ def main():
         raise SystemExit(0 if success else 1)
 
     #no CLI args: fall back to the interactive REPL
-    run_repl(current_config)
+    run_repl(current_config, saved_config)
 
 if __name__ == "__main__":
     main()

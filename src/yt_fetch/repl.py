@@ -3,8 +3,9 @@ from . import downloader
 from .batch import run_batch
 
 
-def handle_config_command(parts, current_config):
-    """Parses and executes .config commands."""
+def handle_config_command(parts, current_config, saved_config):
+    """Parses and executes .config commands. Updates are written to
+    saved_config (config.txt) so CLI overrides in current_config never get saved."""
     #case 1: ".config" -> print entire config
     if len(parts) == 1:
         print("\nCurrent Configuration:")
@@ -28,8 +29,9 @@ def handle_config_command(parts, current_config):
             value = value.lower()
 
         if key in current_config:
-            success = config.validate_and_update(current_config, key, value)
+            success = config.validate_and_update(saved_config, key, value)
             if success:
+                current_config[key] = value
                 if key == "quality":
                     print(f"quality is set to {value}kbs")
                 else:
@@ -37,7 +39,7 @@ def handle_config_command(parts, current_config):
         else:
             print(f"Unknown config key: '{key}'. Valid keys are: {', '.join(current_config.keys())}")
 
-def run_repl(current_config):
+def run_repl(current_config, saved_config):
     """Runs the interactive Enter Link / .config / batch / quit loop."""
     print("YT Fetch")
     while True:
@@ -62,7 +64,7 @@ def run_repl(current_config):
         # Command: Config
         elif user_input.lower().startswith('.config'):
             parts = user_input.split()
-            handle_config_command(parts, current_config)
+            handle_config_command(parts, current_config, saved_config)
 
         #link entered, download
         else:
