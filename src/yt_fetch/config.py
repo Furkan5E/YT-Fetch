@@ -1,20 +1,8 @@
 import os
 import platform
 
-def _is_writable(path):
-    """Tests whether path can actually be written to, not just whether it exists."""
-    test_file = os.path.join(path, '.yt_fetch_write_test')
-    try:
-        with open(test_file, 'w') as f:
-            f.write('')
-        os.remove(test_file)
-        return True
-    except OSError:
-        return False
-
 def _user_config_dir():
-    """The OS-standard per-user config location, used as a fallback when the
-    source folder isn't writable"""
+    """The OS-standard per-user config location."""
     system = platform.system()
     if system == 'Windows':
         base = os.environ.get('APPDATA', os.path.expanduser('~'))
@@ -29,11 +17,13 @@ def _user_config_dir():
 _base_dir_cache = {'value': None}
 
 def get_base_dir():
-    """Where config.txt, batch.txt, and the default downloads folder live."""
+    """Where config.txt and batch.txt live."""
     if _base_dir_cache['value'] is None:
-        source_dir = os.path.dirname(os.path.abspath(__file__))
-        _base_dir_cache['value'] = source_dir if _is_writable(source_dir) else _user_config_dir()
+        _base_dir_cache['value'] = _user_config_dir()
     return _base_dir_cache['value']
+
+def get_default_output_dir():
+    return os.path.join(os.path.expanduser('~'), 'Downloads', 'yt-fetch')
 
 def get_config_file():
     return os.path.join(get_base_dir(), "config.txt")
@@ -68,7 +58,7 @@ VALID_OPTIONS = {
 def _default_config():
     """A copy of the default config. output_dir is resolved here."""
     defaults = _STATIC_DEFAULTS.copy()
-    defaults["output_dir"] = os.path.join(get_base_dir(), "downloads")
+    defaults["output_dir"] = get_default_output_dir()
     return defaults
 
 def load_config():

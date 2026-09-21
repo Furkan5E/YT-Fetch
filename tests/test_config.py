@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from yt_fetch import config
 
 
@@ -86,3 +88,33 @@ def test_validate_and_update_accepts_and_persists_valid_value(isolated_config):
     assert success is True
     assert cfg["type"] == "mp4"
     assert config.load_config()["type"] == "mp4"
+
+
+@pytest.fixture
+def fresh_base_dir(monkeypatch):
+    monkeypatch.setitem(config._base_dir_cache, "value", None)
+
+
+def test_base_dir_is_user_config_dir_not_install_dir(fresh_base_dir, tmp_path, monkeypatch):
+    monkeypatch.setattr(config.platform, "system", lambda: "Linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+
+    base_dir = config.get_base_dir()
+
+    assert base_dir == os.path.join(str(tmp_path), "yt-fetch")
+    assert os.path.isdir(base_dir)
+
+
+def test_base_dir_uses_appdata_on_windows(fresh_base_dir, tmp_path, monkeypatch):
+    monkeypatch.setattr(config.platform, "system", lambda: "Windows")
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+
+    assert config.get_base_dir() == os.path.join(str(tmp_path), "yt-fetch")
+
+
+def test_default_output_dir_is_in_user_downloads(isolated_config, tmp_path, monkeypatch):
+    monkeypatch.setattr(config.os.path, "expanduser", lambda path: path.replace("~", str(tmp_path)))
+
+    cfg = config.load_config()
+
+    assert cfg["output_dir"] == os.path.join(str(tmp_path), "Downloads", "yt-fetch")

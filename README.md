@@ -30,6 +30,7 @@ Run the main script.
 ```bash
 uv run yt-fetch
 ```
+Settings are saved to `config.txt` in your user config folder (`%APPDATA%\yt-fetch` on Windows, `~/Library/Application Support/yt-fetch` on macOS, `~/.config/yt-fetch` on Linux). Downloads go to `~/Downloads/yt-fetch` by default.
 ---
 ## Testing
 Run the test suite.
