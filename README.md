@@ -67,6 +67,7 @@ Run these directly from your shell for one off, non-interactive downloads. Flags
 | `--remove-sponsors {true,false}` | Overrides SponsorBlock segment removal. |
 | `--embed-lyrics {true,false}` | Overrides whether lyrics are embedded. |
 | `--output-dir PATH` | Overrides the download output directory. |
+| `--config-path` | Prints the location of `config.txt`, then exits. |
 
 ## Interactive Commands
 Run `yt-fetch` with no arguments to enter the REPL.
@@ -75,7 +76,7 @@ Run `yt-fetch` with no arguments to enter the REPL.
 |---|---|
 | `<URL>` | Paste a URL to begin downloading the media based on your current settings. |
 | `batch` | Downloads all URLs listed in `batch.txt` using the current settings. |
-| `.config` | Displays your current active settings. |
+| `.config` | Displays your current active settings and the location of `config.txt`. |
 | `.config [key]` | Displays the value of a specific setting (e.g. `.config quality`). |
 | `.config [key] [value]` | Updates and saves a setting (e.g. `.config type mp4` or `.config resolution 720`). |
 | `quit` | Exits the application. |

@@ -11,6 +11,7 @@ def handle_config_command(parts, current_config, saved_config):
         print("\nCurrent Configuration:")
         for k, v in current_config.items():
             print(f"  {k} = {v}")
+        print(f"\nConfig file: {config.get_config_file()}")
 
     #case 2: ".config key" -> print specific key
     elif len(parts) == 2:

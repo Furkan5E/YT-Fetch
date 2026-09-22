@@ -7,6 +7,12 @@ from .repl import run_repl
 
 def main():
     args = parse_args()
+
+    #checked before loading so it still works when config.txt is broken
+    if args.config_path:
+        print(config.get_config_file())
+        raise SystemExit(0)
+
     saved_config = config.load_config()
     current_config = apply_overrides(saved_config, args)
 

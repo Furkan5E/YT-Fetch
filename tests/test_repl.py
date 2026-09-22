@@ -31,3 +31,11 @@ def test_invalid_config_update_changes_nothing(isolated_config):
 
     assert current_config["type"] == "mp3"
     assert config.load_config()["type"] == "mp3"
+
+
+def test_config_command_shows_config_file_path(isolated_config, capsys):
+    saved_config = config.load_config()
+
+    handle_config_command([".config"], dict(saved_config), saved_config)
+
+    assert config.get_config_file() in capsys.readouterr().out

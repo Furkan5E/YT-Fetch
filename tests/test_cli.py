@@ -8,7 +8,7 @@ from yt_fetch import cli
 
 def _args(**overrides):
     defaults = {key: None for key in cli.OVERRIDABLE_KEYS}
-    defaults.update(url=None, batch=None, output_dir=None)
+    defaults.update(url=None, batch=None, output_dir=None, config_path=False)
     defaults.update(overrides)
     return argparse.Namespace(**defaults)
 

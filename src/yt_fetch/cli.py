@@ -42,6 +42,11 @@ def parse_args():
         metavar="PATH",
         help="Override 'output_dir' for this run only (config.txt is left unchanged)."
     )
+    parser.add_argument(
+        "--config-path",
+        action="store_true",
+        help="Print the location of config.txt, then exit."
+    )
     return parser.parse_args()
 
 def apply_overrides(current_config, args):
