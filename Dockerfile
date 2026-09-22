@@ -20,5 +20,10 @@ RUN uv sync --frozen --no-install-project
 COPY . .
 RUN uv sync --frozen
 
+# Keep config and downloads outside /app so they can be mounted as volumes
+ENV XDG_CONFIG_HOME=/config \
+    YT_FETCH_OUTPUT_DIR=/downloads
+RUN mkdir -p /config /downloads
+
 # Run the interactive CLI using uv
 ENTRYPOINT ["uv", "run", "yt-fetch"]

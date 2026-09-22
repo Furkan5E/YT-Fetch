@@ -43,14 +43,15 @@ Build the image.
 ```bash
 docker build -t yt-fetch .
 ```
-Run the container.
+Run the container. Downloads are saved to `./downloads` on your machine, and settings are kept in the `yt-fetch-config` volume between runs.
 ```bash
-docker run -it -v "${PWD}:/app" yt-fetch
+docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config yt-fetch
 ```
 Pre-built container:
 ```bash
-docker run -it --rm -v "${PWD}:/app" ghcr.io/furkan5e/yt-fetch:latest
+docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config ghcr.io/furkan5e/yt-fetch:latest
 ```
+To use a batch file, put it in `./downloads` and run with `--batch /downloads/batch.txt`.
 ---
 ## CLI Flags
 Run these directly from your shell for one off, non-interactive downloads. Flags override `config.txt` for that run only, the saved config is never touched.

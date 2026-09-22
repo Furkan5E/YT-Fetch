@@ -23,7 +23,8 @@ def get_base_dir():
     return _base_dir_cache['value']
 
 def get_default_output_dir():
-    return os.path.join(os.path.expanduser('~'), 'Downloads', 'yt-fetch')
+    """YT_FETCH_OUTPUT_DIR takes priority, e.g. to point at a mounted Docker volume."""
+    return os.environ.get('YT_FETCH_OUTPUT_DIR') or os.path.join(os.path.expanduser('~'), 'Downloads', 'yt-fetch')
 
 def get_config_file():
     return os.path.join(get_base_dir(), "config.txt")

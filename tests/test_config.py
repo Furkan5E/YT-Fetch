@@ -113,8 +113,17 @@ def test_base_dir_uses_appdata_on_windows(fresh_base_dir, tmp_path, monkeypatch)
 
 
 def test_default_output_dir_is_in_user_downloads(isolated_config, tmp_path, monkeypatch):
+    monkeypatch.delenv("YT_FETCH_OUTPUT_DIR", raising=False)
     monkeypatch.setattr(config.os.path, "expanduser", lambda path: path.replace("~", str(tmp_path)))
 
     cfg = config.load_config()
 
     assert cfg["output_dir"] == os.path.join(str(tmp_path), "Downloads", "yt-fetch")
+
+
+def test_default_output_dir_env_var_takes_priority(isolated_config, tmp_path, monkeypatch):
+    monkeypatch.setenv("YT_FETCH_OUTPUT_DIR", str(tmp_path / "mounted"))
+
+    cfg = config.load_config()
+
+    assert cfg["output_dir"] == str(tmp_path / "mounted")
