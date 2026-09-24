@@ -17,7 +17,7 @@ A modular, interactive command line application for downloading audio and video 
 ## Prerequisites
 * **Python 3.14+**
 * **uv**: used to install dependencies and run the app.
-* **FFmpeg** (optional): used for media processing and metadata embedding. If it's not found on your system, in the app folder, or in `config.txt`, YT Fetch automatically downloads a static build for you on first run.
+* **FFmpeg** (optional): used for media processing and metadata embedding. If it's not found on your system, in the app folder, or in `config.toml`, YT Fetch automatically downloads a static build for you on first run.
 
 ## Installation
 Clone the repository and sync the dependencies.
@@ -30,7 +30,7 @@ Run the main script.
 ```bash
 uv run yt-fetch
 ```
-Settings are saved to `config.txt` in your user config folder (`%APPDATA%\yt-fetch` on Windows, `~/Library/Application Support/yt-fetch` on macOS, `~/.config/yt-fetch` on Linux). Downloads go to `~/Downloads/yt-fetch` by default.
+Settings are saved to `config.toml` in your user config folder (`%APPDATA%\yt-fetch` on Windows, `~/Library/Application Support/yt-fetch` on macOS, `~/.config/yt-fetch` on Linux). Downloads go to `~/Downloads/yt-fetch` by default. You can edit `config.toml` by hand; each setting has a comment listing its options, and your own comments are kept when the app saves changes.
 ---
 ## Testing
 Run the test suite.
@@ -54,7 +54,7 @@ docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config 
 To use a batch file, put it in `./downloads` and run with `--batch /downloads/batch.txt`.
 ---
 ## CLI Flags
-Run these directly from your shell for one off, non-interactive downloads. Flags override `config.txt` for that run only, the saved config is never touched.
+Run these directly from your shell for one off, non-interactive downloads. Flags override `config.toml` for that run only, the saved config is never touched.
 
 | Flag | Description |
 |---|---|
@@ -68,7 +68,7 @@ Run these directly from your shell for one off, non-interactive downloads. Flags
 | `--remove-sponsors {true,false}` | Overrides SponsorBlock segment removal. |
 | `--embed-lyrics {true,false}` | Overrides whether lyrics are embedded. |
 | `--output-dir PATH` | Overrides the download output directory. |
-| `--config-path` | Prints the location of `config.txt`, then exits. |
+| `--config-path` | Prints the location of `config.toml`, then exits. |
 
 ## Interactive Commands
 Run `yt-fetch` with no arguments to enter the REPL.
@@ -77,7 +77,7 @@ Run `yt-fetch` with no arguments to enter the REPL.
 |---|---|
 | `<URL>` | Paste a URL to begin downloading the media based on your current settings. |
 | `batch` | Downloads all URLs listed in `batch.txt` using the current settings. |
-| `.config` | Displays your current active settings and the location of `config.txt`. |
+| `.config` | Displays your current active settings and the location of `config.toml`. |
 | `.config [key]` | Displays the value of a specific setting (e.g. `.config quality`). |
 | `.config [key] [value]` | Updates and saves a setting (e.g. `.config type mp4` or `.config resolution 720`). |
 | `quit` | Exits the application. |
