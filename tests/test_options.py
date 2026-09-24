@@ -14,12 +14,12 @@ def _stub_ffmpeg(monkeypatch):
 def _config(output_dir, **overrides):
     base = {
         "type": "mp3",
-        "quality": "192",
-        "resolution": "1080",
-        "metadata": "false",
-        "allow_playlists": "false",
-        "remove_sponsors": "false",
-        "embed_lyrics": "false",
+        "quality": 192,
+        "resolution": 1080,
+        "metadata": False,
+        "allow_playlists": False,
+        "remove_sponsors": False,
+        "embed_lyrics": False,
         "output_dir": str(output_dir),
     }
     base.update(overrides)
@@ -27,7 +27,7 @@ def _config(output_dir, **overrides):
 
 
 def test_mp3_format_and_extract_audio_postprocessor(tmp_path):
-    opts = build_ydl_opts(_config(tmp_path, quality="320"))
+    opts = build_ydl_opts(_config(tmp_path, quality=320))
 
     assert opts["format"] == "bestaudio/best"
     assert {
@@ -38,7 +38,7 @@ def test_mp3_format_and_extract_audio_postprocessor(tmp_path):
 
 
 def test_mp4_format_with_resolution_cap(tmp_path):
-    opts = build_ydl_opts(_config(tmp_path, type="mp4", resolution="720"))
+    opts = build_ydl_opts(_config(tmp_path, type="mp4", resolution=720))
 
     assert opts["format"] == (
         "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best"
@@ -52,7 +52,7 @@ def test_mp4_format_with_best_resolution(tmp_path):
 
 
 def test_metadata_true_adds_thumbnail_and_metadata_postprocessors(tmp_path):
-    opts = build_ydl_opts(_config(tmp_path, metadata="true"))
+    opts = build_ydl_opts(_config(tmp_path, metadata=True))
 
     assert opts["writethumbnail"] is True
     assert {"key": "FFmpegMetadata"} in opts["postprocessors"]
@@ -60,14 +60,14 @@ def test_metadata_true_adds_thumbnail_and_metadata_postprocessors(tmp_path):
 
 
 def test_metadata_false_skips_thumbnail(tmp_path):
-    opts = build_ydl_opts(_config(tmp_path, metadata="false"))
+    opts = build_ydl_opts(_config(tmp_path, metadata=False))
 
     assert "writethumbnail" not in opts
     assert not any(pp["key"] == "FFmpegMetadata" for pp in opts["postprocessors"])
 
 
 def test_remove_sponsors_adds_sponsorblock_postprocessors(tmp_path):
-    opts = build_ydl_opts(_config(tmp_path, remove_sponsors="true"))
+    opts = build_ydl_opts(_config(tmp_path, remove_sponsors=True))
 
     keys = [pp["key"] for pp in opts["postprocessors"]]
     assert "SponsorBlock" in keys
@@ -75,7 +75,7 @@ def test_remove_sponsors_adds_sponsorblock_postprocessors(tmp_path):
 
 
 def test_embed_lyrics_adds_subtitle_postprocessors(tmp_path):
-    opts = build_ydl_opts(_config(tmp_path, embed_lyrics="true"))
+    opts = build_ydl_opts(_config(tmp_path, embed_lyrics=True))
 
     assert opts["writesubtitles"] is True
     assert opts["subtitleslangs"] == ["en", "orig"]
@@ -85,8 +85,8 @@ def test_embed_lyrics_adds_subtitle_postprocessors(tmp_path):
 
 
 def test_allow_playlists_controls_noplaylist_flag(tmp_path):
-    single_video = build_ydl_opts(_config(tmp_path, allow_playlists="false"))
-    full_playlist = build_ydl_opts(_config(tmp_path, allow_playlists="true"))
+    single_video = build_ydl_opts(_config(tmp_path, allow_playlists=False))
+    full_playlist = build_ydl_opts(_config(tmp_path, allow_playlists=True))
 
     assert single_video["noplaylist"] is True
     assert full_playlist["noplaylist"] is False

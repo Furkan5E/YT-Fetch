@@ -8,7 +8,7 @@ from .repl import run_repl
 def main():
     args = parse_args()
 
-    #checked before loading so it still works when config.txt is broken
+    #checked before loading so it still works when config.toml is broken
     if args.config_path:
         print(config.get_config_file())
         raise SystemExit(0)

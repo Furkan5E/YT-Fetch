@@ -55,5 +55,5 @@ def _resolve_ffmpeg_path(custom_path):
         raise FFmpegNotFoundError(
             f"ffmpeg not found, and the static-ffmpeg fallback failed ({e}). "
             "Please install ffmpeg, place it in this folder, or set "
-            "ffmpeg_path in config.txt."
+            "ffmpeg_path in config.toml."
         )

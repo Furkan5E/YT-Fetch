@@ -32,27 +32,30 @@ def parse_args():
         flag = "--" + key.replace("_", "-")
         parser.add_argument(
             flag,
-            choices=config.VALID_OPTIONS.get(key),
+            choices=[config.format_value(v) for v in config.VALID_OPTIONS[key]],
             default=None,
-            help=f"Override '{key}' for this run only (config.txt is left unchanged)."
+            help=f"Override '{key}' for this run only (config.toml is left unchanged)."
         )
     parser.add_argument(
         "--output-dir",
         default=None,
         metavar="PATH",
-        help="Override 'output_dir' for this run only (config.txt is left unchanged)."
+        help="Override 'output_dir' for this run only (config.toml is left unchanged)."
     )
     parser.add_argument(
         "--config-path",
         action="store_true",
-        help="Print the location of config.txt, then exit."
+        help="Print the location of config.toml, then exit."
     )
     return parser.parse_args()
 
 def apply_overrides(current_config, args):
     """Returns a copy of current_config with any passed CLI flags applied
-    on top. The underlying config.txt is never touched by this."""
-    overrides = {key: getattr(args, key) for key in OVERRIDABLE_KEYS if getattr(args, key) is not None}
+    on top. The underlying config.toml is never touched by this."""
+    overrides = {
+        key: config.parse_value(key, getattr(args, key))
+        for key in OVERRIDABLE_KEYS if getattr(args, key) is not None
+    }
     if args.output_dir is not None:
         overrides["output_dir"] = args.output_dir
     return {**current_config, **overrides} if overrides else current_config

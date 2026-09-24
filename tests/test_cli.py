@@ -31,6 +31,15 @@ def test_apply_overrides_merges_only_the_provided_flags():
     assert base_config["type"] == "mp3"  #original config is not mutated
 
 
+def test_apply_overrides_converts_flag_text_to_typed_values():
+    base_config = {"quality": 192, "metadata": True}
+
+    result = cli.apply_overrides(base_config, _args(quality="320", metadata="false"))
+
+    assert result["quality"] == 320
+    assert result["metadata"] is False
+
+
 def test_apply_overrides_handles_output_dir_separately():
     base_config = {"type": "mp3", "output_dir": "/old"}
 

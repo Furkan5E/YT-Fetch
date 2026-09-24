@@ -5,47 +5,91 @@ import pytest
 from yt_fetch import config
 
 
+def _write_config(text):
+    with open(config.get_config_file(), "w", encoding="utf-8") as f:
+        f.write(text)
+
+
 def test_load_config_creates_file_with_defaults(isolated_config):
     cfg = config.load_config()
 
     assert cfg["type"] == "mp3"
-    assert cfg["quality"] == "192"
+    assert cfg["quality"] == 192
+    assert cfg["metadata"] is True
     assert os.path.exists(config.get_config_file())
 
 
-def test_load_config_reads_existing_values(isolated_config):
-    with open(config.get_config_file(), "w") as f:
-        f.write("type=mp4\nquality=320\n")
+def test_config_file_is_toml(isolated_config):
+    assert config.get_config_file().endswith("config.toml")
+
+
+def test_new_config_file_has_comments(isolated_config):
+    config.load_config()
+
+    with open(config.get_config_file(), encoding="utf-8") as f:
+        contents = f.read()
+
+    assert "# mp3 or mp4" in contents
+    assert "metadata = true" in contents
+
+
+def test_load_config_reads_typed_values(isolated_config):
+    _write_config('type = "mp4"\nquality = 320\nmetadata = false\n')
 
     cfg = config.load_config()
 
     assert cfg["type"] == "mp4"
-    assert cfg["quality"] == "320"
+    assert cfg["quality"] == 320
+    assert cfg["metadata"] is False
+
+
+def test_load_config_accepts_values_written_as_strings(isolated_config):
+    _write_config('quality = "320"\nresolution = "720"\nmetadata = "false"\n')
+
+    cfg = config.load_config()
+
+    assert cfg["quality"] == 320
+    assert cfg["resolution"] == 720
+    assert cfg["metadata"] is False
 
 
 def test_load_config_fills_missing_keys_with_defaults(isolated_config):
-    with open(config.get_config_file(), "w") as f:
-        f.write("type=mp4\n")
+    _write_config('type = "mp4"\n')
 
     cfg = config.load_config()
 
-    assert cfg["resolution"] == "1080"
-    assert cfg["remove_sponsors"] == "true"
+    assert cfg["resolution"] == 1080
+    assert cfg["remove_sponsors"] is True
 
 
 def test_load_config_repairs_invalid_values(isolated_config, capsys):
-    with open(config.get_config_file(), "w") as f:
-        f.write("type=mp4\nquality=9999\n")
+    _write_config('type = "mp4"\nquality = 9999\n')
 
     cfg = config.load_config()
 
-    assert cfg["quality"] == "192"
+    assert cfg["quality"] == 192
     assert "Invalid value" in capsys.readouterr().out
 
 
+def test_load_config_rejects_numbers_for_booleans(isolated_config):
+    _write_config("metadata = 0\n")
+
+    cfg = config.load_config()
+
+    assert cfg["metadata"] is True
+
+
+def test_load_config_exits_on_invalid_toml(isolated_config, capsys):
+    _write_config("type = mp4\n")
+
+    with pytest.raises(SystemExit):
+        config.load_config()
+
+    assert "not valid TOML" in capsys.readouterr().out
+
+
 def test_load_config_preserves_case_for_path_keys(isolated_config):
-    with open(config.get_config_file(), "w") as f:
-        f.write("output_dir=C:\\Users\\Someone\\Downloads\n")
+    _write_config("output_dir = 'C:\\Users\\Someone\\Downloads'\n")
 
     cfg = config.load_config()
 
@@ -53,22 +97,41 @@ def test_load_config_preserves_case_for_path_keys(isolated_config):
 
 
 def test_load_config_lowercases_non_path_values(isolated_config):
-    with open(config.get_config_file(), "w") as f:
-        f.write("type=MP4\n")
+    _write_config('type = "MP4"\n')
 
     cfg = config.load_config()
 
     assert cfg["type"] == "mp4"
 
 
-def test_save_config_writes_key_value_pairs(isolated_config):
-    config.save_config({"type": "mp4", "quality": "320"})
+def test_save_config_keeps_user_comments(isolated_config):
+    _write_config('# my note\ntype = "mp3"  # keep me\n')
 
-    with open(config.get_config_file()) as f:
+    config.save_config({"type": "mp4", "quality": 320})
+
+    with open(config.get_config_file(), encoding="utf-8") as f:
         contents = f.read()
 
-    assert "type=mp4" in contents
-    assert "quality=320" in contents
+    assert "# my note" in contents
+    assert 'type = "mp4"  # keep me' in contents
+    assert "quality = 320" in contents
+
+
+def test_save_config_writes_paths_without_escaped_backslashes(isolated_config):
+    config.save_config({"output_dir": "C:\\Users\\Someone\\Music"})
+
+    with open(config.get_config_file(), encoding="utf-8") as f:
+        contents = f.read()
+
+    assert "output_dir = 'C:\\Users\\Someone\\Music'" in contents
+    assert config.load_config()["output_dir"] == "C:\\Users\\Someone\\Music"
+
+
+def test_parse_value_converts_cli_text():
+    assert config.parse_value("metadata", "True") is True
+    assert config.parse_value("quality", "320") == 320
+    assert config.parse_value("resolution", "best") == "best"
+    assert config.parse_value("output_dir", " C:\\Music ") == "C:\\Music"
 
 
 def test_validate_and_update_rejects_invalid_value(isolated_config):
@@ -83,11 +146,11 @@ def test_validate_and_update_rejects_invalid_value(isolated_config):
 def test_validate_and_update_accepts_and_persists_valid_value(isolated_config):
     cfg = config.load_config()
 
-    success = config.validate_and_update(cfg, "type", "mp4")
+    success = config.validate_and_update(cfg, "quality", 320)
 
     assert success is True
-    assert cfg["type"] == "mp4"
-    assert config.load_config()["type"] == "mp4"
+    assert cfg["quality"] == 320
+    assert config.load_config()["quality"] == 320
 
 
 @pytest.fixture
