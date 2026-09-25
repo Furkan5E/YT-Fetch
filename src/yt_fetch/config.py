@@ -52,7 +52,7 @@ _STATIC_DEFAULTS = {
 }
 
 VALID_OPTIONS = {
-    "type": ["mp3", "mp4"],
+    "type": ["mp3", "m4a", "opus", "flac", "wav", "mp4", "mkv", "webm"],
     "quality": [128, 192, 256, 320],
     "resolution": [480, 720, 1080, 1440, 2160, "best"],
     "metadata": [True, False],
@@ -63,9 +63,9 @@ VALID_OPTIONS = {
 
 #written next to each key when config.toml is first created
 _KEY_COMMENTS = {
-    "type": "mp3 or mp4",
-    "quality": "mp3 bitrate in kbps: 128, 192, 256 or 320",
-    "resolution": "max mp4 height: 480, 720, 1080, 1440, 2160 or \"best\"",
+    "type": "audio: mp3, m4a, opus, flac, wav | video: mp4, mkv, webm",
+    "quality": "audio bitrate in kbps: 128, 192, 256 or 320 (not used for flac/wav)",
+    "resolution": "max video height: 480, 720, 1080, 1440, 2160 or \"best\"",
     "metadata": "embed title, artist and thumbnail",
     "ffmpeg_path": "\"auto\" or a path to an ffmpeg executable",
     "allow_playlists": "download whole playlists from playlist links",

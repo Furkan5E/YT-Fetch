@@ -1,5 +1,6 @@
 import pytest
 
+from yt_fetch import config
 from yt_fetch.downloader import options as options_module
 from yt_fetch.downloader.lyrics import EmbedLyricsPP
 from yt_fetch.downloader.options import build_ydl_opts, build_extra_postprocessors
@@ -140,3 +141,67 @@ def test_output_dir_is_created(tmp_path):
     build_ydl_opts(_config(out_dir))
 
     assert out_dir.is_dir()
+
+
+def test_every_configurable_type_is_an_audio_or_video_type():
+    handled = set(options_module.AUDIO_TYPES) | set(options_module.VIDEO_TYPES)
+
+    assert set(config.VALID_OPTIONS["type"]) == handled
+
+
+@pytest.mark.parametrize("audio_type", ["mp3", "m4a", "opus"])
+def test_lossy_audio_types_use_quality(tmp_path, audio_type):
+    opts = build_ydl_opts(_config(tmp_path, type=audio_type, quality=256))
+
+    assert {
+        "key": "FFmpegExtractAudio",
+        "preferredcodec": audio_type,
+        "preferredquality": "256",
+    } in opts["postprocessors"]
+
+
+@pytest.mark.parametrize("audio_type", ["flac", "wav"])
+def test_lossless_audio_types_ignore_quality(tmp_path, audio_type):
+    opts = build_ydl_opts(_config(tmp_path, type=audio_type))
+
+    extract = next(pp for pp in opts["postprocessors"] if pp["key"] == "FFmpegExtractAudio")
+    assert extract == {"key": "FFmpegExtractAudio", "preferredcodec": audio_type}
+
+
+def test_mkv_takes_best_quality_and_remuxes_to_mkv(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path, type="mkv", resolution=720))
+
+    assert opts["format"] == "bv*[height<=720]+ba/b[height<=720]"
+    assert opts["format_sort"] == ["res", "fps"]
+    assert opts["merge_output_format"] == "mkv"
+    assert {"key": "FFmpegVideoRemuxer", "preferedformat": "mkv"} in opts["postprocessors"]
+
+
+def test_webm_only_picks_webm_streams(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path, type="webm", resolution=720))
+
+    assert opts["format"] == "bv*[ext=webm][height<=720]+ba[ext=webm]/b[ext=webm][height<=720]"
+    assert opts["merge_output_format"] == "webm"
+
+
+def test_webm_subtitles_are_converted_to_webvtt(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path, type="webm", embed_lyrics=True))
+
+    assert {"key": "FFmpegSubtitlesConvertor", "format": "vtt"} in opts["postprocessors"]
+
+
+@pytest.mark.parametrize("media_type", ["wav", "webm"])
+def test_no_thumbnail_embedding_where_unsupported(tmp_path, media_type):
+    opts = build_ydl_opts(_config(tmp_path, type=media_type, metadata=True))
+
+    keys = [pp["key"] for pp in opts["postprocessors"]]
+    assert "writethumbnail" not in opts
+    assert "EmbedThumbnail" not in keys
+    assert "FFmpegMetadata" in keys
+
+
+@pytest.mark.parametrize("audio_type", ["m4a", "opus", "flac", "wav"])
+def test_embed_lyrics_uses_lyrics_postprocessor_for_all_audio(tmp_path, audio_type):
+    extra = build_extra_postprocessors(_config(tmp_path, type=audio_type, embed_lyrics=True))
+
+    assert len(extra) == 1 and isinstance(extra[0], EmbedLyricsPP)

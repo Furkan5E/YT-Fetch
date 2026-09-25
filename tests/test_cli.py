@@ -72,7 +72,7 @@ def test_parse_args_reads_url_and_overrides(monkeypatch, isolated_config):
 
 
 def test_parse_args_rejects_invalid_choice(monkeypatch, isolated_config, capsys):
-    monkeypatch.setattr(sys, "argv", ["yt-fetch", "--type", "wav"])
+    monkeypatch.setattr(sys, "argv", ["yt-fetch", "--type", "avi"])
 
     with pytest.raises(SystemExit):
         cli.parse_args()

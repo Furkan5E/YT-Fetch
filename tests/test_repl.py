@@ -27,7 +27,7 @@ def test_invalid_config_update_changes_nothing(isolated_config):
     saved_config = config.load_config()
     current_config = dict(saved_config)
 
-    handle_config_command([".config", "type", "wav"], current_config, saved_config)
+    handle_config_command([".config", "type", "avi"], current_config, saved_config)
 
     assert current_config["type"] == "mp3"
     assert config.load_config()["type"] == "mp3"

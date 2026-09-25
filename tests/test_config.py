@@ -29,7 +29,7 @@ def test_new_config_file_has_comments(isolated_config):
     with open(config.get_config_file(), encoding="utf-8") as f:
         contents = f.read()
 
-    assert "# mp3 or mp4" in contents
+    assert "# audio: mp3, m4a, opus, flac, wav" in contents
     assert "metadata = true" in contents
 
 
@@ -137,10 +137,10 @@ def test_parse_value_converts_cli_text():
 def test_validate_and_update_rejects_invalid_value(isolated_config):
     cfg = config.load_config()
 
-    success = config.validate_and_update(cfg, "type", "wav")
+    success = config.validate_and_update(cfg, "type", "avi")
 
     assert success is False
-    assert cfg["type"] != "wav"
+    assert cfg["type"] != "avi"
 
 
 def test_validate_and_update_accepts_and_persists_valid_value(isolated_config):

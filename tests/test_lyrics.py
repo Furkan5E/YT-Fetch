@@ -1,10 +1,11 @@
 import subprocess
 
+import mutagen
 import pytest
 from mutagen.id3 import ID3
 from static_ffmpeg.run import get_or_fetch_platform_executables_else_raise
 
-from yt_fetch.downloader.lyrics import EmbedLyricsPP, srt_to_lyrics
+from yt_fetch.downloader.lyrics import EmbedLyricsPP, srt_to_lyrics, write_lyrics
 
 SRT = """1
 00:00:18,800 --> 00:00:21,800
@@ -88,3 +89,34 @@ def test_does_nothing_without_subtitles(mp3_file):
 
     assert to_delete == []
     assert ID3(mp3_file).getall("USLT") == []
+
+
+def _read_lyrics(path):
+    audio = mutagen.File(path)
+    if path.suffix == ".m4a":
+        return audio.tags["\xa9lyr"][0]
+    if path.suffix in (".flac", ".opus"):
+        return audio.tags["LYRICS"][0]
+    return audio.tags.getall("USLT")[0].text
+
+
+@pytest.mark.parametrize("ext, codec", [
+    ("mp3", "libmp3lame"), ("m4a", "aac"), ("opus", "libopus"), ("flac", "flac"), ("wav", "pcm_s16le"),
+])
+def test_write_lyrics_for_each_audio_type(tmp_path, ext, codec):
+    ffmpeg, _ = get_or_fetch_platform_executables_else_raise()
+    path = tmp_path / f"song.{ext}"
+    subprocess.run(
+        [ffmpeg, "-loglevel", "error", "-f", "lavfi", "-i", "sine=d=1", "-c:a", codec, str(path)],
+        check=True,
+    )
+
+    assert write_lyrics(str(path), "line one\nline two", "en") is True
+    assert _read_lyrics(path) == "line one\nline two"
+
+
+def test_write_lyrics_reports_unsupported_types(tmp_path):
+    path = tmp_path / "song.aiff"
+    path.write_bytes(b"")
+
+    assert write_lyrics(str(path), "text", "en") is False

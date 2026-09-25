@@ -5,15 +5,25 @@ from .lyrics import EmbedLyricsPP
 from .progress import SilentLogger, minimalist_progress_hook
 
 
+#lossless formats have no bitrate, so 'quality' only applies to the others
+AUDIO_TYPES = ['mp3', 'm4a', 'opus', 'flac', 'wav']
+LOSSLESS_AUDIO_TYPES = ['flac', 'wav']
+VIDEO_TYPES = ['mp4', 'mkv', 'webm']
+
+#EmbedThumbnail fails outright on these instead of skipping
+NO_THUMBNAIL_TYPES = ['wav', 'webm']
+
 def _add_lyrics_opts(opts, config):
-    """Downloads the video's subtitles to use as lyrics. mp4 gets them as
-    subtitle tracks; mp3 can't hold those, so EmbedLyricsPP (see
-    build_extra_postprocessors) writes them into an ID3 lyrics tag instead."""
+    """Downloads the video's subtitles to use as lyrics. Video formats get
+    them as subtitle tracks; audio formats can't hold those, so EmbedLyricsPP
+    (see build_extra_postprocessors) writes them into a lyrics tag instead."""
     if config.get('embed_lyrics', False):
         opts['writesubtitles'] = True
         opts['subtitleslangs'] = ['all', '-live_chat']
-        opts['postprocessors'].append({'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'})
-        if config['type'] == 'mp4':
+        #webm only accepts WebVTT subtitle tracks
+        sub_format = 'vtt' if config['type'] == 'webm' else 'srt'
+        opts['postprocessors'].append({'key': 'FFmpegSubtitlesConvertor', 'format': sub_format})
+        if config['type'] in VIDEO_TYPES:
             opts['postprocessors'].append({'key': 'FFmpegEmbedSubtitle'})
 
 def _add_sponsor_opts(opts, config):
@@ -31,31 +41,50 @@ def _add_sponsor_opts(opts, config):
             'force_keyframes': False
         })
 
-def _add_format_opts(opts, config):
-    """Sets the target format (mp4 video or mp3 audio) and resolution."""
-    if config['type'] == 'mp4':
-        res = config.get('resolution', 1080)
-        height = '' if res == 'best' else f'[height<={res}]'
-        #any codec is allowed so high resolutions that YouTube only serves as
-        #VP9/AV1 aren't skipped; at equal resolution h264/aac win for compatibility
-        opts['format'] = f'bv*{height}+ba/b{height}'
-        opts['format_sort'] = ['res', 'fps', 'vcodec:h264', 'acodec:aac']
-        opts['merge_output_format'] = 'mp4'
-        opts['postprocessors'].append({'key': 'FFmpegVideoRemuxer', 'preferedformat': 'mp4'})
+def _add_video_format_opts(opts, config):
+    res = config.get('resolution', 1080)
+    height = '' if res == 'best' else f'[height<={res}]'
+    video_type = config['type']
+
+    if video_type == 'webm':
+        #webm can only hold VP9/AV1 video and Opus/Vorbis audio, which YouTube serves as webm
+        opts['format'] = f'bv*[ext=webm]{height}+ba[ext=webm]/b[ext=webm]{height}'
+        opts['format_sort'] = ['res', 'fps']
     else:
-        #default to mp3
-        opts['format'] = 'bestaudio/best'
-        opts['postprocessors'].append({
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': str(config['quality']),
-        })
+        #any codec is allowed so high resolutions that YouTube only serves as
+        #VP9/AV1 aren't skipped
+        opts['format'] = f'bv*{height}+ba/b{height}'
+        if video_type == 'mp4':
+            #at equal resolution h264/aac win for compatibility
+            opts['format_sort'] = ['res', 'fps', 'vcodec:h264', 'acodec:aac']
+        else:
+            #mkv holds any codec, so just take the best quality
+            opts['format_sort'] = ['res', 'fps']
+        opts['postprocessors'].append({'key': 'FFmpegVideoRemuxer', 'preferedformat': video_type})
+
+    opts['merge_output_format'] = video_type
+
+def _add_audio_format_opts(opts, config):
+    audio_type = config['type']
+    extract = {'key': 'FFmpegExtractAudio', 'preferredcodec': audio_type}
+    if audio_type not in LOSSLESS_AUDIO_TYPES:
+        extract['preferredquality'] = str(config['quality'])
+    opts['format'] = 'bestaudio/best'
+    opts['postprocessors'].append(extract)
+
+def _add_format_opts(opts, config):
+    """Sets the target format and, for video, the resolution."""
+    if config['type'] in VIDEO_TYPES:
+        _add_video_format_opts(opts, config)
+    else:
+        _add_audio_format_opts(opts, config)
 
 def _add_metadata_opts(opts, config):
     if config['metadata']:
-        opts['writethumbnail'] = True
         opts['postprocessors'].append({'key': 'FFmpegMetadata'})
-        opts['postprocessors'].append({'key': 'EmbedThumbnail'})
+        if config['type'] not in NO_THUMBNAIL_TYPES:
+            opts['writethumbnail'] = True
+            opts['postprocessors'].append({'key': 'EmbedThumbnail'})
 
 def build_ydl_opts(config):
     """Dynamically builds yt-dlp options based on the current config."""
@@ -89,6 +118,6 @@ def build_ydl_opts(config):
 def build_extra_postprocessors(config):
     """Custom postprocessors, which yt-dlp only accepts via add_post_processor.
     They run after everything in opts['postprocessors']."""
-    if config.get('embed_lyrics', False) and config['type'] == 'mp3':
+    if config.get('embed_lyrics', False) and config['type'] in AUDIO_TYPES:
         return [EmbedLyricsPP()]
     return []
