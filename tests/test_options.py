@@ -1,7 +1,8 @@
 import pytest
 
 from yt_fetch.downloader import options as options_module
-from yt_fetch.downloader.options import build_ydl_opts
+from yt_fetch.downloader.lyrics import EmbedLyricsPP
+from yt_fetch.downloader.options import build_ydl_opts, build_extra_postprocessors
 
 
 @pytest.fixture(autouse=True)
@@ -85,14 +86,44 @@ def test_remove_sponsors_adds_sponsorblock_postprocessors(tmp_path):
     assert "ModifyChapters" in keys
 
 
-def test_embed_lyrics_adds_subtitle_postprocessors(tmp_path):
+def test_embed_lyrics_downloads_all_subtitle_languages(tmp_path):
     opts = build_ydl_opts(_config(tmp_path, embed_lyrics=True))
 
     assert opts["writesubtitles"] is True
-    assert opts["subtitleslangs"] == ["en", "orig"]
-    keys = [pp["key"] for pp in opts["postprocessors"]]
-    assert "FFmpegSubtitlesConvertor" in keys
+    assert opts["subtitleslangs"] == ["all", "-live_chat"]
+
+
+def test_embed_lyrics_mp4_embeds_subtitle_tracks(tmp_path):
+    cfg = _config(tmp_path, type="mp4", embed_lyrics=True)
+
+    keys = [pp["key"] for pp in build_ydl_opts(cfg)["postprocessors"]]
+
     assert "FFmpegEmbedSubtitle" in keys
+    assert build_extra_postprocessors(cfg) == []
+
+
+def test_embed_lyrics_mp3_uses_lyrics_postprocessor(tmp_path):
+    cfg = _config(tmp_path, type="mp3", embed_lyrics=True)
+
+    keys = [pp["key"] for pp in build_ydl_opts(cfg)["postprocessors"]]
+    extra = build_extra_postprocessors(cfg)
+
+    assert "FFmpegEmbedSubtitle" not in keys
+    assert len(extra) == 1 and isinstance(extra[0], EmbedLyricsPP)
+
+
+def test_embed_lyrics_off_adds_nothing(tmp_path):
+    cfg = _config(tmp_path, embed_lyrics=False)
+
+    assert "writesubtitles" not in build_ydl_opts(cfg)
+    assert build_extra_postprocessors(cfg) == []
+
+
+def test_audio_is_extracted_before_metadata_is_embedded(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path, metadata=True, embed_lyrics=True))
+
+    keys = [pp["key"] for pp in opts["postprocessors"]]
+    assert keys.index("FFmpegExtractAudio") < keys.index("FFmpegMetadata")
 
 
 def test_allow_playlists_controls_noplaylist_flag(tmp_path):

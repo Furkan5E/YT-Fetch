@@ -1,17 +1,20 @@
 import os
 
 from .ffmpeg import get_ffmpeg_path
+from .lyrics import EmbedLyricsPP
 from .progress import SilentLogger, minimalist_progress_hook
 
 
 def _add_lyrics_opts(opts, config):
+    """Downloads the video's subtitles to use as lyrics. mp4 gets them as
+    subtitle tracks; mp3 can't hold those, so EmbedLyricsPP (see
+    build_extra_postprocessors) writes them into an ID3 lyrics tag instead."""
     if config.get('embed_lyrics', False):
         opts['writesubtitles'] = True
-        opts['subtitleslangs'] = ['en', 'orig']
-        opts['postprocessors'].extend([
-            {'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'},
-            {'key': 'FFmpegEmbedSubtitle'}
-        ])
+        opts['subtitleslangs'] = ['all', '-live_chat']
+        opts['postprocessors'].append({'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'})
+        if config['type'] == 'mp4':
+            opts['postprocessors'].append({'key': 'FFmpegEmbedSubtitle'})
 
 def _add_sponsor_opts(opts, config):
     if config.get('remove_sponsors', True):
@@ -75,9 +78,17 @@ def build_ydl_opts(config):
         'postprocessors': []
     }
 
-    _add_lyrics_opts(opts, config)
+    #order matters: postprocessors run in the order they're added
     _add_sponsor_opts(opts, config)
     _add_format_opts(opts, config)
+    _add_lyrics_opts(opts, config)
     _add_metadata_opts(opts, config)
 
     return opts
+
+def build_extra_postprocessors(config):
+    """Custom postprocessors, which yt-dlp only accepts via add_post_processor.
+    They run after everything in opts['postprocessors']."""
+    if config.get('embed_lyrics', False) and config['type'] == 'mp3':
+        return [EmbedLyricsPP()]
+    return []

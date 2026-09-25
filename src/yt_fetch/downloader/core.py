@@ -1,7 +1,7 @@
 import yt_dlp
 
 from .ffmpeg import FFmpegNotFoundError
-from .options import build_ydl_opts
+from .options import build_ydl_opts, build_extra_postprocessors
 
 
 def download_video(video_url, config):
@@ -17,6 +17,8 @@ def download_video(video_url, config):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            for pp in build_extra_postprocessors(config):
+                ydl.add_post_processor(pp)
             print(f"\nFetching data for: {video_url}...")
             ydl.download([video_url])
             print("\nSuccessfully downloaded!")
