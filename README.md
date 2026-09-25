@@ -60,8 +60,8 @@ Run these directly from your shell for one off, non-interactive downloads. Flags
 |---|---|
 | `<URL>` | Downloads the given URL once, then exits. |
 | `--batch [FILE]` | Downloads every link in `FILE` (default: `batch.txt`), then exits. |
-| `--type {mp3,mp4}` | Overrides the output format. |
-| `--quality {128,192,256,320}` | Overrides the audio bitrate (kbps). |
+| `--type {mp3,m4a,opus,flac,wav,mp4,mkv,webm}` | Overrides the output format. Audio: `mp3`, `m4a`, `opus`, `flac`, `wav`. Video: `mp4`, `mkv`, `webm`. |
+| `--quality {128,192,256,320}` | Overrides the audio bitrate (kbps). Not used for `flac` and `wav`, which are lossless. |
 | `--resolution {480,720,1080,1440,2160,best}` | Overrides the video resolution. |
 | `--metadata {true,false}` | Overrides whether metadata is embedded. |
 | `--allow-playlists {true,false}` | Overrides whether playlist URLs are expanded. |
