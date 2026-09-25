@@ -32,10 +32,13 @@ def _add_format_opts(opts, config):
     """Sets the target format (mp4 video or mp3 audio) and resolution."""
     if config['type'] == 'mp4':
         res = config.get('resolution', 1080)
-        if res == 'best':
-            opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
-        else:
-            opts['format'] = f'bestvideo[ext=mp4][height<={res}]+bestaudio[ext=m4a]/best[ext=mp4][height<={res}]/best'
+        height = '' if res == 'best' else f'[height<={res}]'
+        #any codec is allowed so high resolutions that YouTube only serves as
+        #VP9/AV1 aren't skipped; at equal resolution h264/aac win for compatibility
+        opts['format'] = f'bv*{height}+ba/b{height}'
+        opts['format_sort'] = ['res', 'fps', 'vcodec:h264', 'acodec:aac']
+        opts['merge_output_format'] = 'mp4'
+        opts['postprocessors'].append({'key': 'FFmpegVideoRemuxer', 'preferedformat': 'mp4'})
     else:
         #default to mp3
         opts['format'] = 'bestaudio/best'

@@ -40,15 +40,26 @@ def test_mp3_format_and_extract_audio_postprocessor(tmp_path):
 def test_mp4_format_with_resolution_cap(tmp_path):
     opts = build_ydl_opts(_config(tmp_path, type="mp4", resolution=720))
 
-    assert opts["format"] == (
-        "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best"
-    )
+    assert opts["format"] == "bv*[height<=720]+ba/b[height<=720]"
+    assert opts["merge_output_format"] == "mp4"
 
 
 def test_mp4_format_with_best_resolution(tmp_path):
     opts = build_ydl_opts(_config(tmp_path, type="mp4", resolution="best"))
 
-    assert opts["format"] == "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+    assert opts["format"] == "bv*+ba/b"
+
+
+def test_mp4_format_prefers_resolution_then_compatible_codecs(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path, type="mp4"))
+
+    assert opts["format_sort"] == ["res", "fps", "vcodec:h264", "acodec:aac"]
+
+
+def test_mp4_remuxes_single_file_fallback_to_mp4(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path, type="mp4"))
+
+    assert {"key": "FFmpegVideoRemuxer", "preferedformat": "mp4"} in opts["postprocessors"]
 
 
 def test_metadata_true_adds_thumbnail_and_metadata_postprocessors(tmp_path):
