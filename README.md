@@ -76,7 +76,7 @@ Run `yt-fetch` with no arguments to enter the REPL.
 | Command | Description |
 |---|---|
 | `<URL>` | Paste a URL to begin downloading the media based on your current settings. |
-| `batch` | Downloads all URLs listed in `batch.txt` using the current settings. |
+| `batch` | Downloads all URLs listed in `batch.txt` (one per line, lines starting with `#` are ignored) using the current settings. |
 | `.config` | Displays your current active settings and the location of `config.toml`. |
 | `.config [key]` | Displays the value of a specific setting (e.g. `.config quality`). |
 | `.config [key] [value]` | Updates and saves a setting (e.g. `.config type mp4` or `.config resolution 720`). |

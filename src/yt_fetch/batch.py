@@ -10,10 +10,12 @@ def run_batch(batch_file, current_config):
         return False
 
     with open(batch_file, "r") as f:
-        links = [line.strip() for line in f if line.strip()]
+        links = [line.strip() for line in f]
+    #only whole-line comments are skipped, since URLs can contain '#'
+    links = [link for link in links if link and not link.startswith("#")]
 
     if not links:
-        print(f"\n[Error] {batch_file} is empty.")
+        print(f"\n[Error] {batch_file} has no links.")
         return False
 
     print(f"\nFound {len(links)} links in {batch_file}. Starting batch process...")
