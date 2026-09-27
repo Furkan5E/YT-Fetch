@@ -16,15 +16,19 @@ def main():
     saved_config = config.load_config()
     current_config = apply_overrides(saved_config, args)
 
-    #non-interactive: a URL was passed directly, e.g. `yt-fetch <url>`
-    if args.url:
-        success = downloader.download_video(args.url, current_config)
-        raise SystemExit(0 if success else 1)
+    try:
+        #non-interactive: a URL was passed directly, e.g. `yt-fetch <url>`
+        if args.url:
+            success = downloader.download_video(args.url, current_config)
+            raise SystemExit(0 if success else 1)
 
-    #non-interactive: --batch was passed, e.g. `yt-fetch --batch links.txt`
-    if args.batch:
-        success = run_batch(args.batch, current_config)
-        raise SystemExit(0 if success else 1)
+        #non-interactive: --batch was passed, e.g. `yt-fetch --batch links.txt`
+        if args.batch:
+            success = run_batch(args.batch, current_config)
+            raise SystemExit(0 if success else 1)
+    except KeyboardInterrupt:
+        #already reported by download_video/run_batch; 130 is the usual Ctrl+C exit code
+        raise SystemExit(130)
 
     #no CLI args: fall back to the interactive REPL
     run_repl(current_config, saved_config)

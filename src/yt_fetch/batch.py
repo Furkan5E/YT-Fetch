@@ -19,11 +19,17 @@ def run_batch(batch_file, current_config):
     print(f"\nFound {len(links)} links in {batch_file}. Starting batch process...")
     succeeded = 0
     failed_links = []
-    for link in links:
-        if downloader.download_video(link, current_config):
-            succeeded += 1
-        else:
-            failed_links.append(link)
+    try:
+        for link in links:
+            if downloader.download_video(link, current_config):
+                succeeded += 1
+            else:
+                failed_links.append(link)
+    except KeyboardInterrupt:
+        #the interrupted link counts as not attempted
+        skipped = len(links) - succeeded - len(failed_links)
+        print(f"\nBatch cancelled. {succeeded}/{len(links)} succeeded, {skipped} not downloaded.")
+        raise
     print(f"\nBatch processing complete! {succeeded}/{len(links)} succeeded.")
     if failed_links:
         print("Failed links:")

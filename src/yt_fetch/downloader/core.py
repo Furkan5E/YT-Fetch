@@ -10,7 +10,15 @@ def _clean_error(error):
     return remove_terminal_sequences(str(error)).removeprefix('ERROR:').strip()
 
 def download_video(video_url, config):
-    """Executes the download process. Returns True on success, False on failure."""
+    """Executes the download process. Returns True on success, False on failure.
+    Ctrl+C is reported and re-raised so callers can decide what it cancels."""
+    try:
+        return _download(video_url, config)
+    except KeyboardInterrupt:
+        print("\nDownload cancelled.")
+        raise
+
+def _download(video_url, config):
     try:
         ydl_opts = build_ydl_opts(config)
     except FFmpegNotFoundError as e:

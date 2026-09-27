@@ -55,15 +55,20 @@ def run_repl(current_config, saved_config):
             print("Terminating application.")
             break
 
-        #command: batch
-        elif user_input.lower() == 'batch':
-            run_batch(config.get_batch_file(), current_config)
+        #Ctrl+C here cancels the current command and returns to the prompt;
+        #download_video/run_batch have already reported it
+        try:
+            #command: batch
+            if user_input.lower() == 'batch':
+                run_batch(config.get_batch_file(), current_config)
 
-        # Command: Config
-        elif user_input.lower().startswith('.config'):
-            parts = user_input.split()
-            handle_config_command(parts, current_config, saved_config)
+            # Command: Config
+            elif user_input.lower().startswith('.config'):
+                parts = user_input.split()
+                handle_config_command(parts, current_config, saved_config)
 
-        #link entered, download
-        else:
-            downloader.download_video(user_input, current_config)
+            #link entered, download
+            else:
+                downloader.download_video(user_input, current_config)
+        except KeyboardInterrupt:
+            pass
