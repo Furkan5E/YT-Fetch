@@ -1,5 +1,7 @@
 class SilentLogger:
-    """A yt-dlp logger that suppresses everything except errors."""
+    """A yt-dlp logger that suppresses everything. Errors are also raised as
+    DownloadError, which download_video prints, so printing them here too
+    would show each one twice."""
     def debug(self, msg):
         pass
     def warning(self, msg):
@@ -7,7 +9,7 @@ class SilentLogger:
     def info(self, msg):
         pass
     def error(self, msg):
-        print(f"\n[Error] {msg}")
+        pass
 
 def minimalist_progress_hook(d):
     if d['status'] == 'downloading':
