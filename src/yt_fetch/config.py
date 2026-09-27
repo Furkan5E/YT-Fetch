@@ -61,8 +61,8 @@ VALID_OPTIONS = {
     "embed_lyrics": [True, False]
 }
 
-#written next to each key when config.toml is first created
-_KEY_COMMENTS = {
+#written next to each key when config.toml is first created, and shown by the REPL help command
+KEY_DESCRIPTIONS = {
     "type": "audio: mp3, m4a, opus, flac, wav | video: mp4, mkv, webm",
     "quality": "audio bitrate in kbps: 128, 192, 256 or 320 (not used for flac/wav)",
     "resolution": "max video height: 480, 720, 1080, 1440, 2160 or \"best\"",
@@ -116,8 +116,8 @@ def _new_document(config):
     doc.add(tomlkit.nl())
     for key, value in config.items():
         item = _toml_value(key, value)
-        if key in _KEY_COMMENTS:
-            item.comment(_KEY_COMMENTS[key])
+        if key in KEY_DESCRIPTIONS:
+            item.comment(KEY_DESCRIPTIONS[key])
         doc.add(key, item)
     return doc
 

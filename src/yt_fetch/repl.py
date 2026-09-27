@@ -37,9 +37,30 @@ def handle_config_command(parts, current_config, saved_config):
         else:
             print(f"Unknown config key: '{key}'. Valid keys are: {', '.join(current_config.keys())}")
 
+COMMANDS = [
+    ("<URL>", "Download the link using the current settings"),
+    ("batch", "Download every link in batch.txt (lines starting with # are skipped)"),
+    (".config", "Show all settings and where config.toml is"),
+    (".config KEY", "Show one setting"),
+    (".config KEY VALUE", "Change a setting and save it"),
+    ("help", "Show this help"),
+    ("quit", "Exit (Ctrl+C at this prompt also exits)"),
+]
+
+def print_help():
+    print("\nCommands:")
+    for command, description in COMMANDS:
+        print(f"  {command:<19}{description}")
+    print("\nCtrl+C during a download cancels it and removes its partial files.")
+    print(f"batch.txt: {config.get_batch_file()}")
+
+    print("\nSettings (change with .config KEY VALUE):")
+    for key, description in config.KEY_DESCRIPTIONS.items():
+        print(f"  {key:<19}{description}")
+
 def run_repl(current_config, saved_config):
-    """Runs the interactive Enter Link / .config / batch / quit loop."""
-    print(f"YT Fetch {get_version()}")
+    """Runs the interactive Enter Link / .config / batch / help / quit loop."""
+    print(f"YT Fetch {get_version()}. Type 'help' for commands.")
     while True:
         try:
             user_input = input("\nEnter Link: ").strip()
@@ -58,8 +79,12 @@ def run_repl(current_config, saved_config):
         #Ctrl+C here cancels the current command and returns to the prompt;
         #download_video/run_batch have already reported it
         try:
+            #command: help
+            if user_input.lower() in ('help', '?'):
+                print_help()
+
             #command: batch
-            if user_input.lower() == 'batch':
+            elif user_input.lower() == 'batch':
                 run_batch(config.get_batch_file(), current_config)
 
             # Command: Config
