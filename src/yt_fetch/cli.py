@@ -1,6 +1,6 @@
 import argparse
 
-from . import config
+from . import config, get_version
 
 #config keys that can be overridden with CLI flags
 OVERRIDABLE_KEYS = [
@@ -41,6 +41,11 @@ def parse_args():
         default=None,
         metavar="PATH",
         help="Override 'output_dir' for this run only (config.toml is left unchanged)."
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {get_version()}"
     )
     parser.add_argument(
         "--config-path",

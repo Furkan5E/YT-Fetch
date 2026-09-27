@@ -1,4 +1,4 @@
-from . import config
+from . import config, get_version
 from . import downloader
 from .batch import run_batch
 
@@ -39,7 +39,7 @@ def handle_config_command(parts, current_config, saved_config):
 
 def run_repl(current_config, saved_config):
     """Runs the interactive Enter Link / .config / batch / quit loop."""
-    print("YT Fetch")
+    print(f"YT Fetch {get_version()}")
     while True:
         try:
             user_input = input("\nEnter Link: ").strip()

@@ -69,6 +69,7 @@ Run these directly from your shell for one off, non-interactive downloads. Flags
 | `--embed-lyrics {true,false}` | Overrides whether lyrics are embedded. |
 | `--output-dir PATH` | Overrides the download output directory. |
 | `--config-path` | Prints the location of `config.toml`, then exits. |
+| `--version` | Prints the installed version, then exits. |
 
 ## Interactive Commands
 Run `yt-fetch` with no arguments to enter the REPL.

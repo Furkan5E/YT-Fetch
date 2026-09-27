@@ -1,8 +1,10 @@
 import argparse
+import importlib.metadata
 import sys
 
 import pytest
 
+import yt_fetch
 from yt_fetch import cli
 
 
@@ -76,3 +78,25 @@ def test_parse_args_rejects_invalid_choice(monkeypatch, isolated_config, capsys)
 
     with pytest.raises(SystemExit):
         cli.parse_args()
+
+
+def test_version_flag_prints_installed_version(monkeypatch, isolated_config, capsys):
+    monkeypatch.setattr(sys, "argv", ["yt-fetch", "--version"])
+
+    with pytest.raises(SystemExit) as exit_info:
+        cli.parse_args()
+
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"yt-fetch {yt_fetch.get_version()}"
+
+
+def test_get_version_reads_package_metadata():
+    assert yt_fetch.get_version() == importlib.metadata.version("yt-fetch")
+
+
+def test_get_version_falls_back_when_not_installed(monkeypatch):
+    def not_installed(name):
+        raise importlib.metadata.PackageNotFoundError(name)
+    monkeypatch.setattr(yt_fetch, "version", not_installed)
+
+    assert yt_fetch.get_version() == "unknown"
