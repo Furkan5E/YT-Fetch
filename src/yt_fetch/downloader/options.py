@@ -86,12 +86,15 @@ def _add_metadata_opts(opts, config):
             opts['writethumbnail'] = True
             opts['postprocessors'].append({'key': 'EmbedThumbnail'})
 
+def get_output_dir(config):
+    return config.get('output_dir', os.path.join(os.getcwd(), 'downloads'))
+
 def build_ydl_opts(config):
     """Dynamically builds yt-dlp options based on the current config."""
     ffmpeg_path = get_ffmpeg_path(config)
 
     #check if output directory exists
-    out_dir = config.get('output_dir', os.path.join(os.getcwd(), 'downloads'))
+    out_dir = get_output_dir(config)
     os.makedirs(out_dir, exist_ok=True)
 
     #base options
