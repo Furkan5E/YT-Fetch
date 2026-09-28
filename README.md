@@ -1,6 +1,6 @@
 # YT Fetch
 
-![Python](https://img.shields.io/badge/Python-3.14-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![uv](https://img.shields.io/badge/Build-uv-purple?)
 ![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker)
 ![FFmpeg](https://img.shields.io/badge/Powered_by-FFmpeg-414141?logo=ffmpeg)
@@ -15,7 +15,7 @@ A modular, interactive command line application for downloading audio and video 
 
 ---
 ## Prerequisites
-* **Python 3.14+**
+* **Python 3.10+**
 * **uv**: used to install dependencies and run the app.
 * **FFmpeg** (optional): used for media processing and metadata embedding. If it's not found on your system, in the app folder, or in `config.toml`, YT Fetch automatically downloads a static build for you on first run.
 

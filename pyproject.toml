@@ -3,7 +3,7 @@ name = "yt-fetch"
 version = "2.0.0"
 description = "A interactive command line interface (CLI) for downloading YouTube videos and audio. Built with Python and yt-dlp."
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
     "mutagen>=1.48.1",
     "static-ffmpeg>=3.0",
