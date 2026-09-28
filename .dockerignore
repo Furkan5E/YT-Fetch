@@ -1,5 +1,10 @@
-.venv
-__pycache__
-downloads/
-.git
-.exe
+# Allowlist: only what the image needs is sent to the build, so local files
+# (settings, notes, downloads, build output) never end up in the image
+*
+!pyproject.toml
+!uv.lock
+!.python-version
+!README.md
+!LICENSE
+!src/yt_fetch/
+**/__pycache__
