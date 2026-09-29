@@ -35,3 +35,32 @@ def test_file_with_only_comments_has_no_links(tmp_path, monkeypatch, capsys):
     assert result is False
     assert attempted == []
     assert "has no links" in capsys.readouterr().out
+
+
+def test_missing_default_batch_file_is_created(isolated_config, capsys):
+    batch_file = batch.config.get_batch_file()
+
+    assert batch.run_batch(batch_file, {}) is False
+
+    with open(batch_file) as f:
+        assert f.read() == batch.BATCH_FILE_HEADER
+    assert "Created" in capsys.readouterr().out
+
+
+def test_created_batch_file_has_no_links_until_edited(isolated_config, monkeypatch, capsys):
+    batch_file = batch.config.get_batch_file()
+    batch.run_batch(batch_file, {})
+    attempted = []
+    monkeypatch.setattr(batch.downloader, "download_video", lambda link, config: attempted.append(link))
+
+    assert batch.run_batch(batch_file, {}) is False
+    assert attempted == []
+
+
+def test_missing_custom_batch_file_is_not_created(isolated_config, tmp_path, capsys):
+    custom = tmp_path / "typo.txt"
+
+    assert batch.run_batch(str(custom), {}) is False
+
+    assert not custom.exists()
+    assert "not found" in capsys.readouterr().out

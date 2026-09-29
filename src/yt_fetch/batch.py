@@ -1,12 +1,24 @@
 import os
 
+from . import config
 from . import downloader
+
+BATCH_FILE_HEADER = (
+    "# Add one link per line, then run `batch` in yt-fetch (or `yt-fetch --batch`).\n"
+    "# Lines starting with # are ignored.\n"
+)
 
 
 def run_batch(batch_file, current_config):
     """Downloads every link in batch_file. Returns True if all succeeded."""
     if not os.path.exists(batch_file):
-        print(f"\n[Error] {batch_file} not found. Please create it and add links.")
+        #only the default file is created; a missing custom path is more likely a typo
+        if os.path.abspath(batch_file) == os.path.abspath(config.get_batch_file()):
+            with open(batch_file, "w") as f:
+                f.write(BATCH_FILE_HEADER)
+            print(f"\nCreated {batch_file}. Add links to it (one per line) and run batch again.")
+        else:
+            print(f"\n[Error] {batch_file} not found. Please create it and add links.")
         return False
 
     with open(batch_file, "r") as f:
