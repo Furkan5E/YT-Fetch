@@ -4,6 +4,7 @@ from yt_fetch import config
 from yt_fetch.downloader import options as options_module
 from yt_fetch.downloader.lyrics import EmbedLyricsPP
 from yt_fetch.downloader.options import build_ydl_opts, build_extra_postprocessors
+from yt_fetch.downloader.progress import QuietLogger
 
 
 @pytest.fixture(autouse=True)
@@ -209,3 +210,10 @@ def test_embed_lyrics_uses_lyrics_postprocessor_for_all_audio(tmp_path, audio_ty
 
 def test_non_links_are_searched_on_youtube(tmp_path):
     assert build_ydl_opts(_config(tmp_path))["default_search"] == "ytsearch"
+
+
+def test_warnings_reach_the_logger(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path))
+
+    assert opts["no_warnings"] is False
+    assert isinstance(opts["logger"], QuietLogger)

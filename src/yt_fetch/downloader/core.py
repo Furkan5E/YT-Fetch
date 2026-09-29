@@ -3,17 +3,13 @@ import re
 import time
 
 import yt_dlp
-from yt_dlp.utils import remove_terminal_sequences
 
 from .ffmpeg import FFmpegNotFoundError
 from .options import build_ydl_opts, build_extra_postprocessors, get_output_dir
+from .progress import clean_message
 
 
 _BARE_URL = re.compile(r'^[\w-]+(\.[\w-]+)+/')
-
-def _clean_error(error):
-    """Strips yt-dlp's colour codes and 'ERROR:' prefix from its messages."""
-    return remove_terminal_sequences(str(error)).removeprefix('ERROR:').strip()
 
 def _normalise(path):
     return os.path.normcase(os.path.abspath(path))
@@ -103,7 +99,7 @@ def _download(video_url, config, completed):
             return True
 
     except yt_dlp.utils.DownloadError as e:
-        print(f"\n[Error] {_clean_error(e)}")
+        print(f"\n[Error] {clean_message(e, 'ERROR:')}")
         return False
     except Exception as e:
         print(f"\nAn unexpected error occurred: {e}")

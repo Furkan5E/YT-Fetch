@@ -2,7 +2,7 @@ import os
 
 from .ffmpeg import get_ffmpeg_path
 from .lyrics import EmbedLyricsPP
-from .progress import SilentLogger, minimalist_progress_hook
+from .progress import QuietLogger, minimalist_progress_hook
 
 
 #lossless formats have no bitrate, so 'quality' only applies to the others
@@ -102,9 +102,9 @@ def build_ydl_opts(config):
         'outtmpl': os.path.join(out_dir, '%(title)s.%(ext)s'),
         'ffmpeg_location': ffmpeg_path,
         'quiet': True,
-        'no_warnings': True,
+        'no_warnings': False,
         'noprogress': True,
-        'logger': SilentLogger(),
+        'logger': QuietLogger(),
         'progress_hooks': [minimalist_progress_hook],
         'noplaylist': not config.get('allow_playlists', False),
         #anything that isn't a URL is searched on YouTube and the top result downloaded
