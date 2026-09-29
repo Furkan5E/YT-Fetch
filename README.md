@@ -81,6 +81,7 @@ Run `yt-fetch` with no arguments to enter the REPL.
 | `.config` | Displays your current active settings and the location of `config.toml`. |
 | `.config [key]` | Displays the value of a specific setting (e.g. `.config quality`). |
 | `.config [key] [value]` | Updates and saves a setting (e.g. `.config type mp4` or `.config resolution 720`). |
+| `.config reset [key]` | Resets one setting, or all of them, to the default (e.g. `.config reset quality`). |
 | `help` | Lists every command and setting (`?` works too). |
 | `quit` | Exits the application. |
 

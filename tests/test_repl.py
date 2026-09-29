@@ -70,3 +70,50 @@ def test_question_mark_is_an_alias_for_help(isolated_config, monkeypatch, capsys
 
 def test_every_setting_has_a_help_description():
     assert set(config.KEY_DESCRIPTIONS) == set(config._default_config())
+
+
+def test_config_reset_restores_one_setting(isolated_config, capsys):
+    saved_config = config.load_config()
+    current_config = dict(saved_config)
+    handle_config_command([".config", "quality", "320"], current_config, saved_config)
+    handle_config_command([".config", "type", "flac"], current_config, saved_config)
+
+    handle_config_command([".config", "reset", "quality"], current_config, saved_config)
+
+    persisted = config.load_config()
+    assert persisted["quality"] == 192
+    assert persisted["type"] == "flac"
+    assert current_config["quality"] == 192
+    assert "quality reset to 192" in capsys.readouterr().out
+
+
+def test_config_reset_restores_everything(isolated_config, capsys):
+    saved_config = config.load_config()
+    current_config = dict(saved_config)
+    handle_config_command([".config", "quality", "320"], current_config, saved_config)
+    handle_config_command([".config", "metadata", "false"], current_config, saved_config)
+
+    handle_config_command([".config", "reset"], current_config, saved_config)
+
+    assert config.load_config() == config._default_config()
+    assert current_config == config._default_config()
+    assert "All settings reset to defaults." in capsys.readouterr().out
+
+
+def test_config_reset_keeps_user_comments(isolated_config):
+    saved_config = config.load_config()
+    with open(config.get_config_file(), "a", encoding="utf-8") as f:
+        f.write("# my own note\n")
+
+    handle_config_command([".config", "reset"], dict(saved_config), saved_config)
+
+    with open(config.get_config_file(), encoding="utf-8") as f:
+        assert "# my own note" in f.read()
+
+
+def test_config_reset_unknown_key(isolated_config, capsys):
+    saved_config = config.load_config()
+
+    handle_config_command([".config", "reset", "colour"], dict(saved_config), saved_config)
+
+    assert "Unknown config key: 'colour'" in capsys.readouterr().out

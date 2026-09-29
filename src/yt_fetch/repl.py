@@ -6,8 +6,22 @@ from .batch import run_batch
 def handle_config_command(parts, current_config, saved_config):
     """Parses and executes .config commands. Updates are written to
     saved_config (config.toml) so CLI overrides in current_config never get saved."""
+    #".config reset" / ".config reset key" -> restore defaults
+    if len(parts) >= 2 and parts[1].lower() == 'reset':
+        key = parts[2].lower() if len(parts) > 2 else None
+        reset_keys = config.reset_config(saved_config, key)
+        if reset_keys is None:
+            print(f"Unknown config key: '{key}'")
+            return
+        for k in reset_keys:
+            current_config[k] = saved_config[k]
+        if key is None:
+            print("All settings reset to defaults.")
+        else:
+            print(f"{key} reset to {config.format_value(saved_config[key])}")
+
     #case 1: ".config" -> print entire config
-    if len(parts) == 1:
+    elif len(parts) == 1:
         print("\nCurrent Configuration:")
         for k, v in current_config.items():
             print(f"  {k} = {config.format_value(v)}")
@@ -43,6 +57,7 @@ COMMANDS = [
     (".config", "Show all settings and where config.toml is"),
     (".config KEY", "Show one setting"),
     (".config KEY VALUE", "Change a setting and save it"),
+    (".config reset [KEY]", "Reset one setting, or all of them, to the default"),
     ("help", "Show this help"),
     ("quit", "Exit (Ctrl+C at this prompt also exits)"),
 ]
@@ -50,13 +65,13 @@ COMMANDS = [
 def print_help():
     print("\nCommands:")
     for command, description in COMMANDS:
-        print(f"  {command:<19}{description}")
+        print(f"  {command:<21}{description}")
     print("\nCtrl+C during a download cancels it and removes its partial files.")
     print(f"batch.txt: {config.get_batch_file()}")
 
     print("\nSettings (change with .config KEY VALUE):")
     for key, description in config.KEY_DESCRIPTIONS.items():
-        print(f"  {key:<19}{description}")
+        print(f"  {key:<21}{description}")
 
 def run_repl(current_config, saved_config):
     """Runs the interactive Enter Link / .config / batch / help / quit loop."""

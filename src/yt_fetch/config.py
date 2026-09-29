@@ -173,6 +173,18 @@ def save_config(config):
     with open(config_file, 'w', encoding='utf-8') as f:
         f.write(doc.as_string())
 
+def reset_config(config, key=None):
+    """Resets one key, or every key, to its default and saves. Returns the
+    keys that were reset, or None if key isn't a known setting."""
+    defaults = _default_config()
+    if key is not None and key not in defaults:
+        return None
+    keys = [key] if key is not None else list(defaults)
+    for k in keys:
+        config[k] = defaults[k]
+    save_config(config)
+    return keys
+
 def validate_and_update(config, key, value):
     """Checks if the value is allowed before updating the config."""
     if not is_valid(key, value):
