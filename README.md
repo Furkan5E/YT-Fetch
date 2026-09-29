@@ -58,7 +58,7 @@ Run these directly from your shell for one off, non-interactive downloads. Flags
 
 | Flag | Description |
 |---|---|
-| `<URL>` | Downloads the given URL once, then exits. |
+| `<URL>` | Downloads the given URL once, then exits. Search terms work too: `yt-fetch "daft punk one more time"` downloads the top YouTube result. |
 | `--batch [FILE]` | Downloads every link in `FILE` (default: `batch.txt`), then exits. |
 | `--type {mp3,m4a,opus,flac,wav,mp4,mkv,webm}` | Overrides the output format. Audio: `mp3`, `m4a`, `opus`, `flac`, `wav`. Video: `mp4`, `mkv`, `webm`. |
 | `--quality {128,192,256,320}` | Overrides the audio bitrate (kbps). Not used for `flac` and `wav`, which are lossless. |
@@ -76,7 +76,7 @@ Run `yt-fetch` with no arguments to enter the REPL.
 
 | Command | Description |
 |---|---|
-| `<URL>` | Paste a URL to begin downloading the media based on your current settings. |
+| `<URL>` | Paste a URL to begin downloading the media based on your current settings. Anything that isn't a link is searched on YouTube and the top result is downloaded. |
 | `batch` | Downloads all URLs listed in `batch.txt` (one per line, lines starting with `#` are ignored) using the current settings. |
 | `.config` | Displays your current active settings and the location of `config.toml`. |
 | `.config [key]` | Displays the value of a specific setting (e.g. `.config quality`). |

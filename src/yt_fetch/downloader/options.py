@@ -107,6 +107,8 @@ def build_ydl_opts(config):
         'logger': SilentLogger(),
         'progress_hooks': [minimalist_progress_hook],
         'noplaylist': not config.get('allow_playlists', False),
+        #anything that isn't a URL is searched on YouTube and the top result downloaded
+        'default_search': 'ytsearch',
         'postprocessors': []
     }
 

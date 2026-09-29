@@ -205,3 +205,7 @@ def test_embed_lyrics_uses_lyrics_postprocessor_for_all_audio(tmp_path, audio_ty
     extra = build_extra_postprocessors(_config(tmp_path, type=audio_type, embed_lyrics=True))
 
     assert len(extra) == 1 and isinstance(extra[0], EmbedLyricsPP)
+
+
+def test_non_links_are_searched_on_youtube(tmp_path):
+    assert build_ydl_opts(_config(tmp_path))["default_search"] == "ytsearch"

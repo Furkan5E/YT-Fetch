@@ -52,7 +52,7 @@ def handle_config_command(parts, current_config, saved_config):
             print(f"Unknown config key: '{key}'. Valid keys are: {', '.join(current_config.keys())}")
 
 COMMANDS = [
-    ("<URL>", "Download the link using the current settings"),
+    ("<URL or search>", "Download the link, or the top YouTube result for a search"),
     ("batch", "Download every link in batch.txt (lines starting with # are skipped)"),
     (".config", "Show all settings and where config.toml is"),
     (".config KEY", "Show one setting"),

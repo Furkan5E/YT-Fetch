@@ -156,3 +156,24 @@ def test_prints_folder_and_count_for_playlists(fake_ydl, tmp_path, capsys):
     core.download_video("https://example.com/list", {"output_dir": str(tmp_path)})
 
     assert f"Saved 3 files to: {tmp_path}" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("text", [
+    "https://www.youtube.com/watch?v=abc",
+    "http://example.com/v",
+    "youtu.be/abc",
+    "www.youtube.com/watch?v=abc",
+])
+def test_links_are_recognised(text):
+    assert core.looks_like_url(text) is True
+
+
+@pytest.mark.parametrize("text", ["rick astley never gonna", "lofi", "daft punk - one more time"])
+def test_search_terms_are_not_links(text):
+    assert core.looks_like_url(text) is False
+
+
+def test_search_terms_say_they_are_searching(fake_ydl, tmp_path, capsys):
+    core.download_video("daft punk one more time", {"output_dir": str(tmp_path)})
+
+    assert "Searching YouTube for: daft punk one more time" in capsys.readouterr().out

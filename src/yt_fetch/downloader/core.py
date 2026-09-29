@@ -1,4 +1,5 @@
 import os
+import re
 import time
 
 import yt_dlp
@@ -7,6 +8,8 @@ from yt_dlp.utils import remove_terminal_sequences
 from .ffmpeg import FFmpegNotFoundError
 from .options import build_ydl_opts, build_extra_postprocessors, get_output_dir
 
+
+_BARE_URL = re.compile(r'^[\w-]+(\.[\w-]+)+/')
 
 def _clean_error(error):
     """Strips yt-dlp's colour codes and 'ERROR:' prefix from its messages."""
@@ -47,6 +50,11 @@ def _remove_partial_files(out_dir, files_before, completed):
         for path in leftovers:
             print(f"  - {path}")
 
+def looks_like_url(text):
+    """True for full URLs and scheme-less ones like youtu.be/abc, which
+    yt-dlp also treats as links rather than search terms."""
+    return '://' in text or _BARE_URL.match(text) is not None
+
 def _print_saved(completed):
     if len(completed) == 1:
         print(f"Saved to: {completed[0]}")
@@ -85,7 +93,10 @@ def _download(video_url, config, completed):
                 ydl.add_post_processor(pp)
             #called with the final file once a video is fully processed
             ydl.add_post_hook(lambda path: completed.append(os.path.abspath(path)))
-            print(f"\nFetching data for: {video_url}...")
+            if looks_like_url(video_url):
+                print(f"\nFetching data for: {video_url}...")
+            else:
+                print(f"\nSearching YouTube for: {video_url}...")
             ydl.download([video_url])
             print("\nSuccessfully downloaded!")
             _print_saved(completed)

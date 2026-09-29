@@ -17,7 +17,7 @@ def parse_args():
         "url",
         nargs="?",
         default=None,
-        help="A video URL to download once, non-interactively, then exit."
+        help="A video URL, or search terms for the top YouTube result, to download once then exit."
     )
     batch_file = config.get_batch_file()
     parser.add_argument(
