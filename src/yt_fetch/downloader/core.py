@@ -37,7 +37,7 @@ def _remove_partial_files(out_dir, files_before, completed):
     """Deletes files created by a cancelled download (.part files, temp files,
     thumbnails, subtitles, half-processed output), keeping files that were
     already there and any playlist items that fully finished."""
-    partial = _list_files(out_dir) - files_before - completed
+    partial = _list_files(out_dir) - files_before - {_normalise(path) for path in completed}
     leftovers = sorted(path for path in partial if not _remove_file(path))
     removed = len(partial) - len(leftovers)
     if removed:
@@ -47,12 +47,19 @@ def _remove_partial_files(out_dir, files_before, completed):
         for path in leftovers:
             print(f"  - {path}")
 
+def _print_saved(completed):
+    if len(completed) == 1:
+        print(f"Saved to: {completed[0]}")
+    elif completed:
+        #playlists can be long, so just point at the folder
+        print(f"Saved {len(completed)} files to: {os.path.dirname(completed[0])}")
+
 def download_video(video_url, config):
     """Executes the download process. Returns True on success, False on failure.
     Ctrl+C is reported and re-raised so callers can decide what it cancels."""
     out_dir = get_output_dir(config)
     files_before = _list_files(out_dir)
-    completed = set()
+    completed = []
     try:
         return _download(video_url, config, completed)
     except KeyboardInterrupt:
@@ -77,10 +84,11 @@ def _download(video_url, config, completed):
             for pp in build_extra_postprocessors(config):
                 ydl.add_post_processor(pp)
             #called with the final file once a video is fully processed
-            ydl.add_post_hook(lambda path: completed.add(_normalise(path)))
+            ydl.add_post_hook(lambda path: completed.append(os.path.abspath(path)))
             print(f"\nFetching data for: {video_url}...")
             ydl.download([video_url])
             print("\nSuccessfully downloaded!")
+            _print_saved(completed)
             return True
 
     except yt_dlp.utils.DownloadError as e:

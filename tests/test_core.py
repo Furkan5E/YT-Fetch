@@ -136,3 +136,23 @@ def test_files_that_stay_locked_are_reported(monkeypatch, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "Couldn't remove:" in out
     assert "song.temp.mp4" in out
+
+
+def test_prints_where_a_single_download_was_saved(fake_ydl, tmp_path, capsys):
+    song = tmp_path / "Song Title.mp3"
+    fake_ydl.action = lambda ydl: ydl.finish(song)
+
+    assert core.download_video("https://example.com/v", {"output_dir": str(tmp_path)}) is True
+
+    assert f"Saved to: {song}" in capsys.readouterr().out
+
+
+def test_prints_folder_and_count_for_playlists(fake_ydl, tmp_path, capsys):
+    def action(ydl):
+        for name in ("one.mp3", "two.mp3", "three.mp3"):
+            ydl.finish(tmp_path / name)
+    fake_ydl.action = action
+
+    core.download_video("https://example.com/list", {"output_dir": str(tmp_path)})
+
+    assert f"Saved 3 files to: {tmp_path}" in capsys.readouterr().out
