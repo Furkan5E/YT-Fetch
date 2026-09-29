@@ -17,6 +17,7 @@ A modular, interactive command line application for downloading audio and video 
 ## Prerequisites
 * **Python 3.10+**
 * **uv**: used to install dependencies and run the app.
+* **Deno**: installed automatically with the other dependencies. yt-dlp uses it to solve YouTube's JavaScript challenges, without which some formats can be missing.
 * **FFmpeg** (optional): used for media processing and metadata embedding. If it's not found on your system, in the app folder, or in `config.toml`, YT Fetch automatically downloads a static build for you on first run.
 
 ## Installation

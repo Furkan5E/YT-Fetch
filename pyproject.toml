@@ -8,7 +8,7 @@ dependencies = [
     "mutagen>=1.48.1",
     "static-ffmpeg>=3.0",
     "tomlkit>=0.15.1",
-    "yt-dlp>=2026.8.19",
+    "yt-dlp[default,deno,curl-cffi]>=2026.8.19",
 ]
 
 [project.scripts]
