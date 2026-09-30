@@ -4,10 +4,13 @@ import shutil
 
 from static_ffmpeg.run import get_or_fetch_platform_executables_else_raise
 
+#aliased since the functions below take the settings dict as `config`
+from .. import config as app_config
+
 
 class FFmpegNotFoundError(Exception):
-    """Raised when ffmpeg cannot be located via config, local dir, PATH, or
-    the bundled static-ffmpeg fallback."""
+    """Raised when ffmpeg cannot be located via config, the yt-fetch folder,
+    PATH, or the bundled static-ffmpeg fallback."""
     pass
 
 
@@ -28,6 +31,10 @@ def get_ffmpeg_path(config):
     _ffmpeg_cache['resolved'] = resolved
     return resolved
 
+def get_local_ffmpeg_path():
+    name = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
+    return os.path.join(app_config.get_base_dir(), name)
+
 def _resolve_ffmpeg_path(custom_path):
     #1 check if valid path in config
     if custom_path != 'auto':
@@ -37,8 +44,9 @@ def _resolve_ffmpeg_path(custom_path):
             print(f"\n[Warning] Configured ffmpeg path '{custom_path}' not found.")
             print("          Falling back to auto-detection...")
 
-    #2 check local directory
-    local_path = './ffmpeg.exe' if platform.system() == 'Windows' else './ffmpeg'
+    #2 check the yt-fetch folder (next to config.toml), which doesn't depend on
+    #where yt-fetch was started from
+    local_path = get_local_ffmpeg_path()
     if os.path.exists(local_path):
         return local_path
 
@@ -54,6 +62,6 @@ def _resolve_ffmpeg_path(custom_path):
     except Exception as e:
         raise FFmpegNotFoundError(
             f"ffmpeg not found, and the static-ffmpeg fallback failed ({e}). "
-            "Please install ffmpeg, place it in this folder, or set "
+            f"Please install ffmpeg, place it at {local_path}, or set "
             "ffmpeg_path in config.toml."
         )
