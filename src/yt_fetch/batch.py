@@ -14,14 +14,16 @@ def run_batch(batch_file, current_config):
     if not os.path.exists(batch_file):
         #only the default file is created; a missing custom path is more likely a typo
         if os.path.abspath(batch_file) == os.path.abspath(config.get_batch_file()):
-            with open(batch_file, "w") as f:
+            with open(batch_file, "w", encoding="utf-8") as f:
                 f.write(BATCH_FILE_HEADER)
             print(f"\nCreated {batch_file}. Add links to it (one per line) and run batch again.")
         else:
             print(f"\n[Error] {batch_file} not found. Please create it and add links.")
         return False
 
-    with open(batch_file, "r") as f:
+    #utf-8-sig drops the BOM some editors add; links are ASCII, so a comment in
+    #another encoding is replaced rather than crashing the read
+    with open(batch_file, "r", encoding="utf-8-sig", errors="replace") as f:
         links = [line.strip() for line in f]
     #only whole-line comments are skipped, since URLs can contain '#'
     links = [link for link in links if link and not link.startswith("#")]

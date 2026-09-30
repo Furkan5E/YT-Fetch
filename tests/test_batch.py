@@ -64,3 +64,25 @@ def test_missing_custom_batch_file_is_not_created(isolated_config, tmp_path, cap
 
     assert not custom.exists()
     assert "not found" in capsys.readouterr().out
+
+
+def test_bom_does_not_end_up_in_the_first_link(tmp_path, monkeypatch):
+    batch_file = tmp_path / "batch.txt"
+    batch_file.write_bytes("https://example.com/a\n".encode("utf-8-sig"))
+    attempted = []
+    monkeypatch.setattr(batch.downloader, "download_video", lambda link, config: attempted.append(link) or True)
+
+    batch.run_batch(str(batch_file), {})
+
+    assert attempted == ["https://example.com/a"]
+
+
+def test_non_utf8_comments_do_not_break_reading(tmp_path, monkeypatch):
+    batch_file = tmp_path / "batch.txt"
+    batch_file.write_bytes("# Müzik listem\nhttps://example.com/b\n".encode("cp1254"))
+    attempted = []
+    monkeypatch.setattr(batch.downloader, "download_video", lambda link, config: attempted.append(link) or True)
+
+    batch.run_batch(str(batch_file), {})
+
+    assert attempted == ["https://example.com/b"]

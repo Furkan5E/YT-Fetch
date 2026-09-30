@@ -190,3 +190,30 @@ def test_default_output_dir_env_var_takes_priority(isolated_config, tmp_path, mo
     cfg = config.load_config()
 
     assert cfg["output_dir"] == str(tmp_path / "mounted")
+
+
+def test_load_config_accepts_a_bom(isolated_config):
+    with open(config.get_config_file(), "wb") as f:
+        f.write('type = "mp4"\n'.encode("utf-8-sig"))
+
+    assert config.load_config()["type"] == "mp4"
+
+
+def test_load_config_reads_legacy_windows_encoding(isolated_config, monkeypatch):
+    monkeypatch.setattr(config.locale, "getpreferredencoding", lambda do_setlocale=True: "cp1252")
+    with open(config.get_config_file(), "wb") as f:
+        f.write("output_dir = 'C:\\Müzik'\n".encode("cp1252"))
+
+    assert config.load_config()["output_dir"] == "C:\\Müzik"
+
+
+def test_saving_rewrites_legacy_encoding_as_utf8(isolated_config, monkeypatch):
+    monkeypatch.setattr(config.locale, "getpreferredencoding", lambda do_setlocale=True: "cp1252")
+    with open(config.get_config_file(), "wb") as f:
+        f.write("output_dir = 'C:\\Müzik'\n".encode("cp1252"))
+    cfg = config.load_config()
+
+    config.save_config(cfg)
+
+    with open(config.get_config_file(), "rb") as f:
+        assert "Müzik".encode("utf-8") in f.read()

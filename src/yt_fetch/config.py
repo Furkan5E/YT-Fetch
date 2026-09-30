@@ -1,3 +1,4 @@
+import locale
 import os
 import platform
 
@@ -122,8 +123,16 @@ def _new_document(config):
     return doc
 
 def _read_document(config_file):
-    with open(config_file, 'r', encoding='utf-8') as f:
-        return tomlkit.parse(f.read())
+    #utf-8-sig drops the BOM some editors add. Older Windows editors save in the
+    #system's legacy encoding, which is decoded as that instead; the next save
+    #writes the file back as UTF-8
+    try:
+        with open(config_file, 'r', encoding='utf-8-sig') as f:
+            text = f.read()
+    except UnicodeDecodeError:
+        with open(config_file, 'r', encoding=locale.getpreferredencoding(False)) as f:
+            text = f.read()
+    return tomlkit.parse(text)
 
 def load_config():
     """Loads config.toml. Creates it with defaults if it doesn't exist."""
