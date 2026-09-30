@@ -42,12 +42,20 @@ def test_apply_overrides_converts_flag_text_to_typed_values():
     assert result["metadata"] is False
 
 
-def test_apply_overrides_handles_output_dir_separately():
-    base_config = {"type": "mp3", "output_dir": "/old"}
+def test_apply_overrides_handles_output_dir_separately(tmp_path):
+    base_config = {"type": "mp3", "output_dir": str(tmp_path / "old")}
 
-    result = cli.apply_overrides(base_config, _args(output_dir="/new"))
+    result = cli.apply_overrides(base_config, _args(output_dir=str(tmp_path / "new")))
 
-    assert result["output_dir"] == "/new"
+    assert result["output_dir"] == str(tmp_path / "new")
+
+
+def test_output_dir_flag_is_normalised(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    result = cli.apply_overrides({}, _args(output_dir='"Music"'))
+
+    assert result["output_dir"] == str(tmp_path / "Music")
 
 
 def test_parse_args_defaults_to_none_when_no_flags_given(monkeypatch, isolated_config):

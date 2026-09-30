@@ -62,5 +62,5 @@ def apply_overrides(current_config, args):
         for key in OVERRIDABLE_KEYS if getattr(args, key) is not None
     }
     if args.output_dir is not None:
-        overrides["output_dir"] = args.output_dir
+        overrides["output_dir"] = config.parse_value("output_dir", args.output_dir)
     return {**current_config, **overrides} if overrides else current_config

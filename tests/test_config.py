@@ -88,12 +88,13 @@ def test_load_config_exits_on_invalid_toml(isolated_config, capsys):
     assert "not valid TOML" in capsys.readouterr().out
 
 
-def test_load_config_preserves_case_for_path_keys(isolated_config):
-    _write_config("output_dir = 'C:\\Users\\Someone\\Downloads'\n")
+def test_load_config_preserves_case_for_path_keys(isolated_config, tmp_path):
+    music = str(tmp_path / "My Music")
+    _write_config(f"output_dir = '{music}'\n")
 
     cfg = config.load_config()
 
-    assert cfg["output_dir"] == "C:\\Users\\Someone\\Downloads"
+    assert cfg["output_dir"] == music
 
 
 def test_load_config_lowercases_non_path_values(isolated_config):
@@ -117,21 +118,52 @@ def test_save_config_keeps_user_comments(isolated_config):
     assert "quality = 320" in contents
 
 
-def test_save_config_writes_paths_without_escaped_backslashes(isolated_config):
-    config.save_config({"output_dir": "C:\\Users\\Someone\\Music"})
+def test_save_config_writes_paths_without_escaped_backslashes(isolated_config, tmp_path):
+    music = str(tmp_path / "Music")
+    config.save_config({"output_dir": music})
 
     with open(config.get_config_file(), encoding="utf-8") as f:
         contents = f.read()
 
-    assert "output_dir = 'C:\\Users\\Someone\\Music'" in contents
-    assert config.load_config()["output_dir"] == "C:\\Users\\Someone\\Music"
+    #a literal string, so Windows backslashes are written as-is
+    assert f"output_dir = '{music}'" in contents
+    assert config.load_config()["output_dir"] == music
 
 
 def test_parse_value_converts_cli_text():
     assert config.parse_value("metadata", "True") is True
     assert config.parse_value("quality", "320") == 320
     assert config.parse_value("resolution", "best") == "best"
-    assert config.parse_value("output_dir", " C:\\Music ") == "C:\\Music"
+
+
+def test_output_dir_expands_home(monkeypatch, tmp_path):
+    monkeypatch.setattr(config.os.path, "expanduser", lambda path: path.replace("~", str(tmp_path)))
+
+    assert config.parse_value("output_dir", "~/Music") == os.path.abspath(str(tmp_path) + "/Music")
+
+
+def test_output_dir_expands_environment_variables(monkeypatch, tmp_path):
+    monkeypatch.setenv("YT_FETCH_TEST_MUSIC", str(tmp_path))
+
+    assert config.parse_value("output_dir", "$YT_FETCH_TEST_MUSIC") == str(tmp_path)
+
+
+@pytest.mark.parametrize("quote", ['"', "'"])
+def test_output_dir_strips_surrounding_quotes(tmp_path, quote):
+    music = str(tmp_path / "My Music")
+
+    assert config.parse_value("output_dir", f"  {quote}{music}{quote} ") == music
+
+
+def test_output_dir_relative_paths_become_absolute(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    assert config.parse_value("output_dir", "Music") == str(tmp_path / "Music")
+
+
+def test_ffmpeg_path_is_not_made_absolute():
+    #"ffmpeg" on its own means "look on PATH", so it must stay as typed
+    assert config.parse_value("ffmpeg_path", "ffmpeg") == "ffmpeg"
 
 
 def test_validate_and_update_rejects_invalid_value(isolated_config):
@@ -204,7 +236,7 @@ def test_load_config_reads_legacy_windows_encoding(isolated_config, monkeypatch)
     with open(config.get_config_file(), "wb") as f:
         f.write("output_dir = 'C:\\Müzik'\n".encode("cp1252"))
 
-    assert config.load_config()["output_dir"] == "C:\\Müzik"
+    assert config.load_config()["output_dir"] == config.normalise_path("C:\\Müzik")
 
 
 def test_saving_rewrites_legacy_encoding_as_utf8(isolated_config, monkeypatch):

@@ -81,9 +81,20 @@ def format_value(value):
         return "true" if value else "false"
     return str(value)
 
+def normalise_path(text):
+    """Expands ~ and environment variables, drops the quotes Windows' "Copy as
+    path" adds, and makes the path absolute so it doesn't depend on the
+    folder yt-fetch was started from."""
+    text = text.strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in ('"', "'"):
+        text = text[1:-1].strip()
+    return os.path.abspath(os.path.expandvars(os.path.expanduser(text)))
+
 def parse_value(key, text):
     """Converts text typed on the CLI or in the REPL into a typed config value."""
     text = text.strip()
+    if key == 'output_dir':
+        return normalise_path(text)
     if key in CASE_SENSITIVE_KEYS:
         return text
     text = text.lower()
