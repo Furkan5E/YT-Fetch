@@ -1,6 +1,6 @@
 # YT Fetch
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)
 ![uv](https://img.shields.io/badge/Build-uv-purple?)
 ![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker)
 ![FFmpeg](https://img.shields.io/badge/Powered_by-FFmpeg-414141?logo=ffmpeg)
@@ -15,7 +15,7 @@ A modular, interactive command line application for downloading audio and video 
 
 ---
 ## Prerequisites
-* **Python 3.10+**
+* **Python 3.11+**
 * **uv**: used to install dependencies and run the app.
 * **Deno**: installed automatically with the other dependencies. yt-dlp uses it to solve YouTube's JavaScript challenges, without which some formats can be missing.
 * **FFmpeg** (optional): used for media processing and metadata embedding. YT Fetch looks for it at `ffmpeg_path` in `config.toml`, then in the yt-fetch config folder (the folder `yt-fetch --config-path` points into), then on your system `PATH`. If it's in none of those, a static build is downloaded automatically on first run.
