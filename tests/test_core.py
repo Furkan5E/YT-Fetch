@@ -21,7 +21,7 @@ class _FakeYDL:
     def __exit__(self, *exc):
         return False
 
-    def add_post_processor(self, pp):
+    def add_post_processor(self, pp, when='post_process'):
         pass
 
     def add_post_hook(self, hook):

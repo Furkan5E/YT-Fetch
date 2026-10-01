@@ -5,6 +5,7 @@ from yt_fetch.downloader import options as options_module
 from yt_fetch.downloader.lyrics import EmbedLyricsPP
 from yt_fetch.downloader.options import build_ydl_opts, build_extra_postprocessors
 from yt_fetch.downloader.progress import QuietLogger
+from yt_fetch.downloader.sponsors import TolerantSponsorBlockPP
 
 
 @pytest.fixture(autouse=True)
@@ -81,11 +82,15 @@ def test_metadata_false_skips_thumbnail(tmp_path):
 
 
 def test_remove_sponsors_adds_sponsorblock_postprocessors(tmp_path):
-    opts = build_ydl_opts(_config(tmp_path, remove_sponsors=True))
+    cfg = _config(tmp_path, remove_sponsors=True)
 
-    keys = [pp["key"] for pp in opts["postprocessors"]]
-    assert "SponsorBlock" in keys
+    keys = [pp["key"] for pp in build_ydl_opts(cfg)["postprocessors"]]
+    (pp, when), = build_extra_postprocessors(cfg)
+
     assert "ModifyChapters" in keys
+    #the lookup is the tolerant one, so it isn't in the options yt-dlp builds itself
+    assert "SponsorBlock" not in keys
+    assert isinstance(pp, TolerantSponsorBlockPP) and when == "after_filter"
 
 
 def test_embed_lyrics_downloads_all_subtitle_languages(tmp_path):
@@ -111,7 +116,7 @@ def test_embed_lyrics_mp3_uses_lyrics_postprocessor(tmp_path):
     extra = build_extra_postprocessors(cfg)
 
     assert "FFmpegEmbedSubtitle" not in keys
-    assert len(extra) == 1 and isinstance(extra[0], EmbedLyricsPP)
+    assert len(extra) == 1 and isinstance(extra[0][0], EmbedLyricsPP)
 
 
 def test_embed_lyrics_off_adds_nothing(tmp_path):
@@ -205,7 +210,7 @@ def test_no_thumbnail_embedding_where_unsupported(tmp_path, media_type):
 def test_embed_lyrics_uses_lyrics_postprocessor_for_all_audio(tmp_path, audio_type):
     extra = build_extra_postprocessors(_config(tmp_path, type=audio_type, embed_lyrics=True))
 
-    assert len(extra) == 1 and isinstance(extra[0], EmbedLyricsPP)
+    assert len(extra) == 1 and isinstance(extra[0][0], EmbedLyricsPP)
 
 
 def test_non_links_are_searched_on_youtube(tmp_path):

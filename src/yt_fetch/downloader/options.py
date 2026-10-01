@@ -3,6 +3,7 @@ import os
 from .ffmpeg import get_ffmpeg_path
 from .lyrics import EmbedLyricsPP
 from .progress import QuietLogger, minimalist_progress_hook
+from .sponsors import TolerantSponsorBlockPP
 
 
 #lossless formats have no bitrate, so 'quality' only applies to the others
@@ -12,6 +13,8 @@ VIDEO_TYPES = ['mp4', 'mkv', 'webm']
 
 #EmbedThumbnail fails outright on these instead of skipping
 NO_THUMBNAIL_TYPES = ['wav', 'webm']
+
+SPONSOR_CATEGORIES = ['sponsor', 'interaction', 'intro', 'outro']
 
 def _add_lyrics_opts(opts, config):
     """Downloads the video's subtitles to use as lyrics. Video formats get
@@ -27,17 +30,12 @@ def _add_lyrics_opts(opts, config):
             opts['postprocessors'].append({'key': 'FFmpegEmbedSubtitle'})
 
 def _add_sponsor_opts(opts, config):
+    """Cuts the segments that TolerantSponsorBlockPP (see
+    build_extra_postprocessors) fetches and marks as chapters."""
     if config.get('remove_sponsors', True):
-        sponsor_categories = ['sponsor', 'interaction', 'intro', 'outro']
-        #fetches and marks the segments as chapters
-        opts['postprocessors'].append({
-            'key': 'SponsorBlock',
-            'categories': sponsor_categories,
-            'when': 'after_filter'
-        })
         opts['postprocessors'].append({
             'key': 'ModifyChapters',
-            'remove_sponsor_segments': sponsor_categories,
+            'remove_sponsor_segments': SPONSOR_CATEGORIES,
             'force_keyframes': False
         })
 
@@ -121,8 +119,12 @@ def build_ydl_opts(config):
     return opts
 
 def build_extra_postprocessors(config):
-    """Custom postprocessors, which yt-dlp only accepts via add_post_processor.
-    They run after everything in opts['postprocessors']."""
+    """Custom postprocessors, which yt-dlp only accepts via add_post_processor,
+    as (postprocessor, when) pairs. Those in the same stage as
+    opts['postprocessors'] run after them."""
+    extra = []
+    if config.get('remove_sponsors', True):
+        extra.append((TolerantSponsorBlockPP(None, categories=SPONSOR_CATEGORIES), 'after_filter'))
     if config.get('embed_lyrics', False) and config['type'] in AUDIO_TYPES:
-        return [EmbedLyricsPP()]
-    return []
+        extra.append((EmbedLyricsPP(), 'post_process'))
+    return extra

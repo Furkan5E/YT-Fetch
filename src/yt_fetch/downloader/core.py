@@ -85,8 +85,8 @@ def _download(video_url, config, completed):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            for pp in build_extra_postprocessors(config):
-                ydl.add_post_processor(pp)
+            for pp, when in build_extra_postprocessors(config):
+                ydl.add_post_processor(pp, when=when)
             #called with the final file once a video is fully processed
             ydl.add_post_hook(lambda path: completed.append(os.path.abspath(path)))
             if looks_like_url(video_url):
