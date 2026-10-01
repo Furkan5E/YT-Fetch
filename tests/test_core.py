@@ -8,11 +8,14 @@ from yt_fetch.downloader import core
 
 
 class _FakeYDL:
-    """Stands in for yt_dlp.YoutubeDL. download() runs `action` (which can
+    """Stands in for yt_dlp.YoutubeDL. Downloading runs `action` (which can
     create files and call finish() like a completed video), then raises
     `error` if one is set."""
     error = None
     action = None
+    #what extract_info returns for a url; anything else is a single video
+    extracted = {}
+    calls = []
 
     def __init__(self, opts):
         self.opts = opts
@@ -35,11 +38,19 @@ class _FakeYDL:
             hook(str(path))
 
     def download(self, urls):
+        _FakeYDL.calls.append("download")
         #read from the class so the function isn't bound as a method
         if _FakeYDL.action:
             _FakeYDL.action(self)
         if self.error:
             raise self.error
+
+    def extract_info(self, url, download=True, process=True, ie_key=None):
+        _FakeYDL.calls.append(f"extract {url}")
+        return _FakeYDL.extracted.get(url, {"id": "abc", "title": "Song"})
+
+    def process_ie_result(self, info, download=True):
+        self.download([info])
 
 
 @pytest.fixture
@@ -50,6 +61,8 @@ def fake_ydl(monkeypatch, tmp_path):
     yield _FakeYDL
     _FakeYDL.error = None
     _FakeYDL.action = None
+    _FakeYDL.extracted = {}
+    _FakeYDL.calls = []
 
 
 def test_download_error_is_printed_once_without_prefix_or_colours(fake_ydl, capsys):
@@ -218,3 +231,63 @@ def test_search_terms_say_they_are_searching(fake_ydl, tmp_path, capsys):
     core.download_video("daft punk one more time", {"output_dir": str(tmp_path)})
 
     assert "Searching YouTube for: daft punk one more time" in capsys.readouterr().out
+
+
+PLAYLIST_URL = "https://www.youtube.com/playlist?list=PL123"
+
+
+def test_playlist_links_are_refused_when_playlists_are_off(fake_ydl, capsys):
+    fake_ydl.extracted = {PLAYLIST_URL: {"_type": "playlist", "title": "Road Trip"}}
+
+    assert core.download_video(PLAYLIST_URL, {"allow_playlists": False}) is False
+
+    out = capsys.readouterr().out
+    assert 'That link is the playlist "Road Trip", and allow_playlists is off.' in out
+    assert "download" not in fake_ydl.calls
+
+
+def test_links_that_redirect_to_a_playlist_are_refused_too(fake_ydl, capsys):
+    fake_ydl.extracted = {
+        "https://example.com/channel": {"_type": "url", "url": PLAYLIST_URL},
+        PLAYLIST_URL: {"_type": "playlist"},
+    }
+
+    assert core.download_video("https://example.com/channel", {}) is False
+
+    assert "That link is a playlist" in capsys.readouterr().out
+    assert "download" not in fake_ydl.calls
+
+
+def test_playlist_links_download_when_playlists_are_on(fake_ydl):
+    fake_ydl.extracted = {PLAYLIST_URL: {"_type": "playlist", "title": "Road Trip"}}
+
+    assert core.download_video(PLAYLIST_URL, {"allow_playlists": True}) is True
+
+    assert fake_ydl.calls == ["download"]
+
+
+def test_single_videos_are_only_extracted_once(fake_ydl):
+    assert core.download_video("https://example.com/v", {"allow_playlists": False}) is True
+
+    assert fake_ydl.calls == ["extract https://example.com/v", "download"]
+
+
+def test_searches_are_not_treated_as_playlists(fake_ydl):
+    assert core.download_video("daft punk one more time", {"allow_playlists": False}) is True
+
+    assert fake_ydl.calls == ["download"]
+
+
+def test_errors_yt_dlp_raises_unwrapped_are_printed_as_errors(fake_ydl, capsys):
+    fake_ydl.error = yt_dlp.utils.ExtractorError("Requested format is not available", expected=True)
+
+    assert core.download_video("https://example.com/v", {}) is False
+
+    assert "[Error] Requested format is not available" in capsys.readouterr().out
+
+
+def test_links_without_a_scheme_are_opened_rather_than_searched(fake_ydl, capsys):
+    assert core.download_video("youtu.be/abc", {}) is True
+
+    assert fake_ydl.calls == ["extract https://youtu.be/abc", "download"]
+    assert "Fetching data for: https://youtu.be/abc" in capsys.readouterr().out

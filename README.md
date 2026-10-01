@@ -91,7 +91,7 @@ Change these with `.config [key] [value]` in interactive mode, or edit `config.t
 | `quality` | `128`, `192`, `256`, `320` | `192` | Audio bitrate in kbps. Not used for `flac` and `wav`. |
 | `resolution` | `480`, `720`, `1080`, `1440`, `2160`, `best` | `1080` | Maximum video height. |
 | `metadata` | `true`, `false` | `true` | Embeds the title, artist and cover art. Cover art isn't supported in `wav` and `webm`. |
-| `allow_playlists` | `true`, `false` | `false` | Downloads the whole playlist when a link points to one. |
+| `allow_playlists` | `true`, `false` | `false` | Downloads the whole playlist when a link points to one. When off, a video link that also names a playlist downloads just the video, and links to a playlist or channel itself are refused. |
 | `remove_sponsors` | `true`, `false` | `true` | Cuts sponsor, interaction reminder, intro and outro segments using SponsorBlock. |
 | `embed_lyrics` | `true`, `false` | `false` | Embeds the video's hand-written captions: as lyrics in audio files, or as subtitle tracks in video files. Only works when the video has captions. |
 | `ffmpeg_path` | `auto` or a path | `auto` | Where to find FFmpeg. `auto` searches as described in [Prerequisites](#prerequisites). |

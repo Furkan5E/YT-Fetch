@@ -35,9 +35,24 @@ def _remove_temp_dir(temp_dir, report, attempts=5):
             print(f"  - {path}")
 
 def looks_like_url(text):
-    """True for full URLs and scheme-less ones like youtu.be/abc, which
-    yt-dlp also treats as links rather than search terms."""
+    """True for full URLs and scheme-less ones like youtu.be/abc."""
     return '://' in text or _BARE_URL.match(text) is not None
+
+def _extract_unprocessed(ydl, url, max_redirects=5):
+    """Extracts url without downloading it or expanding playlists, following
+    the links some pages just redirect to."""
+    info = ydl.extract_info(url, download=False, process=False) or {}
+    for _ in range(max_redirects):
+        if info.get('_type') != 'url':
+            break
+        info = ydl.extract_info(info['url'], download=False, process=False, ie_key=info.get('ie_key')) or {}
+    return info
+
+def _print_playlist_refused(info):
+    title = info.get('title')
+    name = f'the playlist "{title}"' if title else "a playlist"
+    print(f"\n[Error] That link is {name}, and allow_playlists is off.")
+    print("        Turn it on with `.config allow_playlists true` or `--allow-playlists true`.")
 
 def _print_saved(completed):
     if len(completed) == 1:
@@ -75,22 +90,37 @@ def download_video(video_url, config):
 def _download(video_url, config, ydl_opts):
     #the final path of every video that fully finishes
     completed = []
+    if looks_like_url(video_url) and '://' not in video_url:
+        #without a scheme yt-dlp would search for the link's text instead of opening it
+        video_url = 'https://' + video_url
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             for pp, when in build_extra_postprocessors(config):
                 ydl.add_post_processor(pp, when=when)
             #called with the final file once a video is fully processed
             ydl.add_post_hook(lambda path: completed.append(os.path.abspath(path)))
-            if looks_like_url(video_url):
-                print(f"\nFetching data for: {video_url}...")
-            else:
+            if not looks_like_url(video_url):
                 print(f"\nSearching YouTube for: {video_url}...")
-            ydl.download([video_url])
+                ydl.download([video_url])
+            elif config.get('allow_playlists', False):
+                print(f"\nFetching data for: {video_url}...")
+                ydl.download([video_url])
+            else:
+                print(f"\nFetching data for: {video_url}...")
+                #'noplaylist' only covers video links that also name a playlist;
+                #links to a playlist or channel itself have to be caught here
+                info = _extract_unprocessed(ydl, video_url)
+                if info.get('_type') == 'playlist':
+                    _print_playlist_refused(info)
+                    return False
+                #carries on from the extraction above instead of repeating it
+                ydl.process_ie_result(info, download=True)
             print("\nSuccessfully downloaded!")
             _print_saved(completed)
             return True
 
-    except yt_dlp.utils.DownloadError as e:
+    #process_ie_result raises yt-dlp's other errors without wrapping them in DownloadError
+    except yt_dlp.utils.YoutubeDLError as e:
         print(f"\n[Error] {clean_message(e, 'ERROR:')}")
         return False
     except Exception as e:
