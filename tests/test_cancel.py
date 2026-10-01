@@ -10,7 +10,8 @@ def _raise_interrupt(*args, **kwargs):
     raise KeyboardInterrupt
 
 
-def test_download_video_reports_cancel_and_reraises(monkeypatch, capsys):
+def test_download_video_reports_cancel_and_reraises(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(core, "build_ydl_opts", lambda config: {"paths": {"home": str(tmp_path)}})
     monkeypatch.setattr(core, "_download", _raise_interrupt)
 
     with pytest.raises(KeyboardInterrupt):

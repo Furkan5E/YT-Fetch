@@ -1,3 +1,6 @@
+import os
+import shutil
+
 import pytest
 import yt_dlp
 
@@ -40,8 +43,8 @@ class _FakeYDL:
 
 
 @pytest.fixture
-def fake_ydl(monkeypatch):
-    monkeypatch.setattr(core, "build_ydl_opts", lambda config: {"logger": None})
+def fake_ydl(monkeypatch, tmp_path):
+    monkeypatch.setattr(core, "build_ydl_opts", lambda config: {"paths": {"home": str(tmp_path)}})
     monkeypatch.setattr(core, "build_extra_postprocessors", lambda config: [])
     monkeypatch.setattr(core.yt_dlp, "YoutubeDL", _FakeYDL)
     yield _FakeYDL
@@ -67,20 +70,49 @@ def test_successful_download_returns_true(fake_ydl, capsys):
     assert "Successfully downloaded!" in capsys.readouterr().out
 
 
-def test_cancel_removes_partial_files_but_keeps_existing_ones(fake_ydl, tmp_path, capsys):
-    (tmp_path / "old song.mp3").write_text("already here")
+def _temp_dir(ydl):
+    return ydl.opts["paths"]["temp"]
 
+
+def test_unfinished_files_get_their_own_folder_inside_the_output_dir(fake_ydl, tmp_path):
+    seen = []
+    fake_ydl.action = lambda ydl: seen.append(_temp_dir(ydl))
+
+    core.download_video("https://example.com/v", {})
+
+    assert os.path.dirname(seen[0]) == str(tmp_path)
+    #and it's gone again once the download is over
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_cancel_removes_partial_files(fake_ydl, tmp_path, capsys):
     def action(ydl):
-        (tmp_path / "song.webm.part").write_text("partial")
-        (tmp_path / "song.webp").write_text("thumbnail")
+        for name in ("song.webm.part", "song.webp"):
+            with open(os.path.join(_temp_dir(ydl), name), "w") as f:
+                f.write("partial")
     fake_ydl.action = action
     fake_ydl.error = KeyboardInterrupt()
 
     with pytest.raises(KeyboardInterrupt):
-        core.download_video("https://example.com/v", {"output_dir": str(tmp_path)})
+        core.download_video("https://example.com/v", {})
 
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["old song.mp3"]
+    assert list(tmp_path.iterdir()) == []
     assert "Removed 2 partial file(s)." in capsys.readouterr().out
+
+
+def test_cancel_keeps_files_it_did_not_create(fake_ydl, tmp_path):
+    (tmp_path / "old song.mp3").write_text("already here")
+
+    def action(ydl):
+        #e.g. a browser download or another yt-fetch finishing in the same folder
+        (tmp_path / "someone elses file.zip").write_text("not ours")
+    fake_ydl.action = action
+    fake_ydl.error = KeyboardInterrupt()
+
+    with pytest.raises(KeyboardInterrupt):
+        core.download_video("https://example.com/v", {})
+
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["old song.mp3", "someone elses file.zip"]
 
 
 def test_cancel_keeps_playlist_items_that_finished(fake_ydl, tmp_path):
@@ -88,54 +120,63 @@ def test_cancel_keeps_playlist_items_that_finished(fake_ydl, tmp_path):
         finished = tmp_path / "first.mp3"
         finished.write_text("done")
         ydl.finish(finished)
-        (tmp_path / "second.webm.part").write_text("partial")
+        with open(os.path.join(_temp_dir(ydl), "second.webm.part"), "w") as f:
+            f.write("partial")
     fake_ydl.action = action
     fake_ydl.error = KeyboardInterrupt()
 
     with pytest.raises(KeyboardInterrupt):
-        core.download_video("https://example.com/list", {"output_dir": str(tmp_path)})
+        core.download_video("https://example.com/list", {})
 
     assert sorted(p.name for p in tmp_path.iterdir()) == ["first.mp3"]
 
 
-def test_failed_download_does_not_delete_anything(fake_ydl, tmp_path):
+def test_failed_download_cleans_up_quietly(fake_ydl, tmp_path, capsys):
     def action(ydl):
-        (tmp_path / "song.webm.part").write_text("partial, can be resumed")
+        with open(os.path.join(_temp_dir(ydl), "song.webm.part"), "w") as f:
+            f.write("partial")
     fake_ydl.action = action
     fake_ydl.error = yt_dlp.utils.DownloadError("ERROR: network dropped")
 
-    assert core.download_video("https://example.com/v", {"output_dir": str(tmp_path)}) is False
-    assert (tmp_path / "song.webm.part").exists()
+    assert core.download_video("https://example.com/v", {}) is False
+
+    assert list(tmp_path.iterdir()) == []
+    assert "partial file" not in capsys.readouterr().out
 
 
-def test_remove_file_retries_while_file_is_locked(monkeypatch):
+def test_temp_dir_removal_retries_while_a_file_is_locked(monkeypatch, tmp_path):
+    temp_dir = tmp_path / ".yt-fetch-abc"
+    temp_dir.mkdir()
+    (temp_dir / "song.part").write_text("partial")
+    real_rmtree = shutil.rmtree
     calls = []
 
-    def locked_twice(path):
+    def locked_twice(path, **kwargs):
         calls.append(path)
-        if len(calls) < 3:
-            raise PermissionError
-    monkeypatch.setattr(core.os, "remove", locked_twice)
+        if len(calls) == 3:
+            real_rmtree(path)
+    monkeypatch.setattr(core.shutil, "rmtree", locked_twice)
     monkeypatch.setattr(core.time, "sleep", lambda seconds: None)
 
-    assert core._remove_file("song.part") is True
+    core._remove_temp_dir(str(temp_dir), report=True)
+
     assert len(calls) == 3
+    assert not temp_dir.exists()
 
 
 def test_files_that_stay_locked_are_reported(monkeypatch, tmp_path, capsys):
-    locked = tmp_path / "song.temp.mp4"
-    locked.write_text("in use")
-
-    def always_locked(path):
-        raise PermissionError
-    monkeypatch.setattr(core.os, "remove", always_locked)
+    temp_dir = tmp_path / ".yt-fetch-abc"
+    temp_dir.mkdir()
+    (temp_dir / "song.temp.mp4").write_text("in use")
+    monkeypatch.setattr(core.shutil, "rmtree", lambda path, **kwargs: None)
     monkeypatch.setattr(core.time, "sleep", lambda seconds: None)
 
-    core._remove_partial_files(str(tmp_path), set(), set())
+    core._remove_temp_dir(str(temp_dir), report=True)
 
     out = capsys.readouterr().out
     assert "Couldn't remove:" in out
     assert "song.temp.mp4" in out
+    assert "Removed" not in out
 
 
 def test_prints_where_a_single_download_was_saved(fake_ydl, tmp_path, capsys):

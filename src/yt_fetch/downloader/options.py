@@ -97,7 +97,9 @@ def build_ydl_opts(config):
 
     #base options
     opts = {
-        'outtmpl': os.path.join(out_dir, '%(title)s.%(ext)s'),
+        'outtmpl': '%(title)s.%(ext)s',
+        #download_video adds a 'temp' folder that unfinished files are kept in
+        'paths': {'home': out_dir},
         'ffmpeg_location': ffmpeg_path,
         'quiet': True,
         'no_warnings': False,

@@ -141,6 +141,14 @@ def test_allow_playlists_controls_noplaylist_flag(tmp_path):
     assert full_playlist["noplaylist"] is False
 
 
+def test_files_are_saved_to_the_output_dir_by_title(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path))
+
+    #a relative template, since yt-dlp ignores 'paths' when it's absolute
+    assert opts["outtmpl"] == "%(title)s.%(ext)s"
+    assert opts["paths"] == {"home": str(tmp_path)}
+
+
 def test_output_dir_is_created(tmp_path):
     out_dir = tmp_path / "downloads"
 
