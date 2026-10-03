@@ -101,7 +101,8 @@ def _download(video_url, config, ydl_opts):
             ydl.add_post_hook(lambda path: completed.append(os.path.abspath(path)))
             if not looks_like_url(video_url):
                 print(f"\nSearching YouTube for: {video_url}...")
-                ydl.download([video_url])
+                #an explicit search, so text like "artist: song" isn't read as a link
+                ydl.download([f'ytsearch1:{video_url}'])
             elif config.get('allow_playlists', False):
                 print(f"\nFetching data for: {video_url}...")
                 ydl.download([video_url])

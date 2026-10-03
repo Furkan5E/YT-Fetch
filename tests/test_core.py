@@ -16,6 +16,7 @@ class _FakeYDL:
     #what extract_info returns for a url; anything else is a single video
     extracted = {}
     calls = []
+    downloaded = []
 
     def __init__(self, opts):
         self.opts = opts
@@ -39,6 +40,7 @@ class _FakeYDL:
 
     def download(self, urls):
         _FakeYDL.calls.append("download")
+        _FakeYDL.downloaded.extend(urls)
         #read from the class so the function isn't bound as a method
         if _FakeYDL.action:
             _FakeYDL.action(self)
@@ -63,6 +65,7 @@ def fake_ydl(monkeypatch, tmp_path):
     _FakeYDL.action = None
     _FakeYDL.extracted = {}
     _FakeYDL.calls = []
+    _FakeYDL.downloaded = []
 
 
 def test_download_error_is_printed_once_without_prefix_or_colours(fake_ydl, capsys):
@@ -291,3 +294,10 @@ def test_links_without_a_scheme_are_opened_rather_than_searched(fake_ydl, capsys
 
     assert fake_ydl.calls == ["extract https://youtu.be/abc", "download"]
     assert "Fetching data for: https://youtu.be/abc" in capsys.readouterr().out
+
+
+def test_search_terms_with_a_colon_are_still_searched(fake_ydl):
+    core.download_video("Eminem: Lose Yourself", {})
+
+    #without the prefix yt-dlp reads "eminem:" as a URL scheme
+    assert fake_ydl.downloaded == ["ytsearch1:Eminem: Lose Yourself"]
