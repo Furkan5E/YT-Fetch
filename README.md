@@ -53,14 +53,14 @@ Run `yt-fetch` with no arguments to start interactive mode.
 
 | Command | Description |
 |---|---|
-| `<URL>` | Paste a URL to begin downloading the media based on your current settings. Anything that isn't a link is searched on YouTube and the top result is downloaded. |
+| `<URL>` | Paste a URL to begin downloading the media based on your current settings. Anything that isn't a link is searched on YouTube: the top result is shown and downloaded once you confirm with Enter. |
 | `batch` | Downloads every link in `batch.txt` in the config folder (one per line, lines starting with `#` are ignored). If the file doesn't exist yet, it's created for you. |
 | `.config` | Displays your current settings and the location of `config.toml`. |
 | `.config [key]` | Displays the value of a specific setting (e.g. `.config quality`). |
 | `.config [key] [value]` | Updates and saves a setting (e.g. `.config type mp4` or `.config resolution 720`). |
 | `.config reset [key]` | Resets one setting, or all of them, to the default (e.g. `.config reset quality`). |
 | `help` | Lists every command and setting (`?` works too). |
-| `quit` | Exits the application. |
+| `quit` | Exits the application (`exit` and `q` work too). |
 
 Pressing Ctrl+C during a download cancels it and removes its partial files, then returns you to the prompt. Pressing Ctrl+C at the prompt exits.
 

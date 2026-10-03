@@ -51,15 +51,17 @@ def handle_config_command(parts, current_config, saved_config):
         else:
             print(f"Unknown config key: '{key}'. Valid keys are: {', '.join(current_config.keys())}")
 
+QUIT_COMMANDS = ('quit', 'exit', 'q')
+
 COMMANDS = [
-    ("<URL or search>", "Download the link, or the top YouTube result for a search"),
+    ("<URL or search>", "Download the link, or the top YouTube result for a search (asks first)"),
     ("batch", "Download every link in batch.txt (lines starting with # are skipped)"),
     (".config", "Show all settings and where config.toml is"),
     (".config KEY", "Show one setting"),
     (".config KEY VALUE", "Change a setting and save it"),
     (".config reset [KEY]", "Reset one setting, or all of them, to the default"),
     ("help", "Show this help"),
-    ("quit", "Exit (Ctrl+C at this prompt also exits)"),
+    ("quit", "Exit ('exit', 'q' and Ctrl+C at this prompt work too)"),
 ]
 
 def print_help():
@@ -72,6 +74,14 @@ def print_help():
     print("\nSettings (change with .config KEY VALUE):")
     for key, description in config.KEY_DESCRIPTIONS.items():
         print(f"  {key:<21}{description}")
+
+def confirm_search():
+    """Asks before a search result is downloaded. Enter means yes."""
+    try:
+        answer = input("Download this? [Y/n]: ").strip().lower()
+    except EOFError:
+        return False
+    return answer in ('', 'y', 'yes')
 
 def run_repl(current_config, saved_config):
     """Runs the interactive Enter Link / .config / batch / help / quit loop."""
@@ -87,7 +97,7 @@ def run_repl(current_config, saved_config):
             continue
 
         #command: quit
-        if user_input.lower() == 'quit':
+        if user_input.lower() in QUIT_COMMANDS:
             print("Terminating application.")
             break
 
@@ -103,12 +113,16 @@ def run_repl(current_config, saved_config):
                 run_batch(config.get_batch_file(), current_config)
 
             # Command: Config
-            elif user_input.lower().startswith('.config'):
+            elif user_input.split()[0].lower() == '.config':
                 parts = user_input.split()
                 handle_config_command(parts, current_config, saved_config)
 
+            #a mistyped command shouldn't be searched for and downloaded
+            elif user_input.startswith('.'):
+                print(f"Unknown command: '{user_input.split()[0]}'. Type 'help' for commands.")
+
             #link entered, download
             else:
-                downloader.download_video(user_input, current_config)
+                downloader.download_video(user_input, current_config, confirm_search=confirm_search)
         except KeyboardInterrupt:
             pass

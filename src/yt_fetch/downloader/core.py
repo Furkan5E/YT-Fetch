@@ -54,6 +54,21 @@ def _print_playlist_refused(info):
     print(f"\n[Error] That link is {name}, and allow_playlists is off.")
     print("        Turn it on with `.config allow_playlists true` or `--allow-playlists true`.")
 
+def _format_duration(seconds):
+    minutes, seconds = divmod(int(seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}:{minutes:02}:{seconds:02}" if hours else f"{minutes}:{seconds:02}"
+
+def _describe(result):
+    """A search result as 'Title (3:45) by Channel', with whatever is known."""
+    text = result.get('title') or result.get('url') or 'Unknown video'
+    if result.get('duration'):
+        text += f" ({_format_duration(result['duration'])})"
+    channel = result.get('channel') or result.get('uploader')
+    if channel:
+        text += f" by {channel}"
+    return text
+
 def _print_saved(completed):
     if len(completed) == 1:
         print(f"Saved to: {completed[0]}")
@@ -61,9 +76,11 @@ def _print_saved(completed):
         #playlists can be long, so just point at the folder
         print(f"Saved {len(completed)} files to: {os.path.dirname(completed[0])}")
 
-def download_video(video_url, config):
+def download_video(video_url, config, confirm_search=None):
     """Executes the download process. Returns True on success, False on failure.
-    Ctrl+C is reported and re-raised so callers can decide what it cancels."""
+    Ctrl+C is reported and re-raised so callers can decide what it cancels.
+    confirm_search, if given, is called once a search has found a video and
+    returns whether to download it."""
     try:
         ydl_opts = build_ydl_opts(config)
     except FFmpegNotFoundError as e:
@@ -79,7 +96,7 @@ def download_video(video_url, config):
     ydl_opts['paths']['temp'] = temp_dir
     cancelled = False
     try:
-        return _download(video_url, config, ydl_opts)
+        return _download(video_url, config, ydl_opts, confirm_search)
     except KeyboardInterrupt:
         cancelled = True
         print("\nDownload cancelled.")
@@ -87,7 +104,7 @@ def download_video(video_url, config):
     finally:
         _remove_temp_dir(temp_dir, report=cancelled)
 
-def _download(video_url, config, ydl_opts):
+def _download(video_url, config, ydl_opts, confirm_search=None):
     #the final path of every video that fully finishes
     completed = []
     is_search = not looks_like_url(video_url)
@@ -103,7 +120,15 @@ def _download(video_url, config, ydl_opts):
             if is_search:
                 print(f"\nSearching YouTube for: {video_url}...")
                 #an explicit search, so text like "artist: song" isn't read as a link
-                ydl.download([f'ytsearch1:{video_url}'])
+                results = _extract_unprocessed(ydl, f'ytsearch1:{video_url}')
+                top_result = next(iter(results.get('entries') or []), None)
+                if top_result is not None:
+                    #shown before downloading, since a typo finds a video too
+                    print(f"Found: {_describe(top_result)}")
+                    if confirm_search is not None and not confirm_search():
+                        print("Skipped.")
+                        return False
+                    ydl.process_ie_result(top_result, download=True)
             elif config.get('allow_playlists', False):
                 print(f"\nFetching data for: {video_url}...")
                 ydl.download([video_url])

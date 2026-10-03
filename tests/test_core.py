@@ -7,6 +7,12 @@ import yt_dlp
 from yt_fetch.downloader import core
 
 
+TOP_RESULT = {
+    "_type": "url", "url": "https://www.youtube.com/watch?v=top",
+    "title": "One More Time", "duration": 321, "channel": "Daft Punk",
+}
+
+
 class _FakeYDL:
     """Stands in for yt_dlp.YoutubeDL. Downloading runs `action` (which can
     create files and call finish() like a completed video), then raises
@@ -49,7 +55,11 @@ class _FakeYDL:
 
     def extract_info(self, url, download=True, process=True, ie_key=None):
         _FakeYDL.calls.append(f"extract {url}")
-        return _FakeYDL.extracted.get(url, {"id": "abc", "title": "Song"})
+        if url in _FakeYDL.extracted:
+            return _FakeYDL.extracted[url]
+        if url.startswith("ytsearch1:"):
+            return {"_type": "playlist", "entries": [TOP_RESULT]}
+        return {"id": "abc", "title": "Song"}
 
     def process_ie_result(self, info, download=True):
         self.download([info])
@@ -280,7 +290,7 @@ def test_single_videos_are_only_extracted_once(fake_ydl):
 def test_searches_are_not_treated_as_playlists(fake_ydl):
     assert core.download_video("daft punk one more time", {"allow_playlists": False}) is True
 
-    assert fake_ydl.calls == ["download"]
+    assert fake_ydl.calls == ["extract ytsearch1:daft punk one more time", "download"]
 
 
 def test_errors_yt_dlp_raises_unwrapped_are_printed_as_errors(fake_ydl, capsys):
@@ -302,11 +312,11 @@ def test_search_terms_with_a_colon_are_still_searched(fake_ydl):
     core.download_video("Eminem: Lose Yourself", {})
 
     #without the prefix yt-dlp reads "eminem:" as a URL scheme
-    assert fake_ydl.downloaded == ["ytsearch1:Eminem: Lose Yourself"]
+    assert fake_ydl.calls == ["extract ytsearch1:Eminem: Lose Yourself", "download"]
 
 
 def test_search_without_results_is_a_failure(fake_ydl, capsys):
-    fake_ydl.action = None
+    fake_ydl.extracted = {"ytsearch1:zzzqqqxxyy": {"_type": "playlist", "entries": []}}
 
     assert core.download_video("zzzqqqxxyy", {}) is False
 
@@ -323,3 +333,42 @@ def test_link_that_downloads_nothing_is_a_failure(fake_ydl, capsys):
     out = capsys.readouterr().out
     assert "[Error] Nothing to download from that link." in out
     assert "Successfully downloaded!" not in out
+
+
+def test_search_shows_what_it_found_before_downloading(fake_ydl, capsys):
+    assert core.download_video("daft punk one more time", {}) is True
+
+    assert "Found: One More Time (5:21) by Daft Punk" in capsys.readouterr().out
+    assert fake_ydl.downloaded == [TOP_RESULT]
+
+
+def test_declined_search_result_is_not_downloaded(fake_ydl, capsys):
+    assert core.download_video("bacth", {}, confirm_search=lambda: False) is False
+
+    out = capsys.readouterr().out
+    assert "Found: One More Time" in out
+    assert "Skipped." in out
+    assert "download" not in fake_ydl.calls
+
+
+def test_confirmed_search_result_is_downloaded(fake_ydl):
+    assert core.download_video("daft punk", {}, confirm_search=lambda: True) is True
+
+    assert fake_ydl.downloaded == [TOP_RESULT]
+
+
+def test_links_are_never_asked_about(fake_ydl):
+    def fail():
+        raise AssertionError("links shouldn't need confirming")
+
+    assert core.download_video("https://example.com/v", {}, confirm_search=fail) is True
+
+
+@pytest.mark.parametrize("result, expected", [
+    ({"title": "Song", "duration": 59, "channel": "Artist"}, "Song (0:59) by Artist"),
+    ({"title": "Long Mix", "duration": 3725.0, "uploader": "DJ"}, "Long Mix (1:02:05) by DJ"),
+    ({"title": "Song"}, "Song"),
+    ({"url": "https://youtu.be/abc"}, "https://youtu.be/abc"),
+])
+def test_search_results_are_described_with_what_is_known(result, expected):
+    assert core._describe(result) == expected

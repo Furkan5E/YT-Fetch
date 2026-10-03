@@ -1,4 +1,6 @@
-from yt_fetch import config
+import pytest
+
+from yt_fetch import config, repl
 from yt_fetch.repl import COMMANDS, handle_config_command, run_repl
 
 
@@ -117,3 +119,49 @@ def test_config_reset_unknown_key(isolated_config, capsys):
     handle_config_command([".config", "reset", "colour"], dict(saved_config), saved_config)
 
     assert "Unknown config key: 'colour'" in capsys.readouterr().out
+
+
+def _run_with_inputs(monkeypatch, *lines):
+    """Runs the REPL on the given input lines and returns the download calls."""
+    inputs = iter(lines)
+    monkeypatch.setattr("builtins.input", lambda prompt: next(inputs))
+    calls = []
+    monkeypatch.setattr(repl.downloader, "download_video",
+                        lambda link, config, **kwargs: calls.append((link, kwargs)))
+    run_repl({}, {})
+    return calls
+
+
+@pytest.mark.parametrize("command", ["quit", "exit", "q", "EXIT"])
+def test_quit_aliases_exit_without_downloading(monkeypatch, capsys, command):
+    assert _run_with_inputs(monkeypatch, command) == []
+    assert "Terminating application." in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("command", [".help", ".configfoo", ".cofnig type mp4"])
+def test_unknown_dot_commands_are_not_searched_for(monkeypatch, capsys, command):
+    assert _run_with_inputs(monkeypatch, command, "quit") == []
+    assert f"Unknown command: '{command.split()[0]}'" in capsys.readouterr().out
+
+
+def test_downloads_from_the_prompt_confirm_search_results(monkeypatch):
+    calls = _run_with_inputs(monkeypatch, "daft punk", "quit")
+
+    assert calls == [("daft punk", {"confirm_search": repl.confirm_search})]
+
+
+@pytest.mark.parametrize("answer, expected", [
+    ("", True), ("y", True), ("Yes", True), ("n", False), ("no", False), ("batch", False),
+])
+def test_confirm_search_defaults_to_yes(monkeypatch, answer, expected):
+    monkeypatch.setattr("builtins.input", lambda prompt: answer)
+
+    assert repl.confirm_search() is expected
+
+
+def test_confirm_search_is_no_when_input_ends(monkeypatch):
+    def end_of_input(prompt):
+        raise EOFError
+    monkeypatch.setattr("builtins.input", end_of_input)
+
+    assert repl.confirm_search() is False
