@@ -90,7 +90,8 @@ def download_video(video_url, config):
 def _download(video_url, config, ydl_opts):
     #the final path of every video that fully finishes
     completed = []
-    if looks_like_url(video_url) and '://' not in video_url:
+    is_search = not looks_like_url(video_url)
+    if not is_search and '://' not in video_url:
         #without a scheme yt-dlp would search for the link's text instead of opening it
         video_url = 'https://' + video_url
     try:
@@ -99,7 +100,7 @@ def _download(video_url, config, ydl_opts):
                 ydl.add_post_processor(pp, when=when)
             #called with the final file once a video is fully processed
             ydl.add_post_hook(lambda path: completed.append(os.path.abspath(path)))
-            if not looks_like_url(video_url):
+            if is_search:
                 print(f"\nSearching YouTube for: {video_url}...")
                 #an explicit search, so text like "artist: song" isn't read as a link
                 ydl.download([f'ytsearch1:{video_url}'])
@@ -116,6 +117,14 @@ def _download(video_url, config, ydl_opts):
                     return False
                 #carries on from the extraction above instead of repeating it
                 ydl.process_ie_result(info, download=True)
+
+            #a search with no results or an empty playlist finishes without an error
+            if not completed:
+                if is_search:
+                    print(f"\n[Error] No results for: {video_url}")
+                else:
+                    print("\n[Error] Nothing to download from that link.")
+                return False
             print("\nSuccessfully downloaded!")
             _print_saved(completed)
             return True

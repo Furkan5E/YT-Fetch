@@ -60,6 +60,8 @@ def fake_ydl(monkeypatch, tmp_path):
     monkeypatch.setattr(core, "build_ydl_opts", lambda config: {"paths": {"home": str(tmp_path)}})
     monkeypatch.setattr(core, "build_extra_postprocessors", lambda config: [])
     monkeypatch.setattr(core.yt_dlp, "YoutubeDL", _FakeYDL)
+    #unless a test says otherwise, every download saves one file
+    _FakeYDL.action = lambda ydl: ydl.finish(tmp_path / "Song.mp3")
     yield _FakeYDL
     _FakeYDL.error = None
     _FakeYDL.action = None
@@ -301,3 +303,23 @@ def test_search_terms_with_a_colon_are_still_searched(fake_ydl):
 
     #without the prefix yt-dlp reads "eminem:" as a URL scheme
     assert fake_ydl.downloaded == ["ytsearch1:Eminem: Lose Yourself"]
+
+
+def test_search_without_results_is_a_failure(fake_ydl, capsys):
+    fake_ydl.action = None
+
+    assert core.download_video("zzzqqqxxyy", {}) is False
+
+    out = capsys.readouterr().out
+    assert "[Error] No results for: zzzqqqxxyy" in out
+    assert "Successfully downloaded!" not in out
+
+
+def test_link_that_downloads_nothing_is_a_failure(fake_ydl, capsys):
+    fake_ydl.action = None
+
+    assert core.download_video("https://example.com/empty-playlist", {"allow_playlists": True}) is False
+
+    out = capsys.readouterr().out
+    assert "[Error] Nothing to download from that link." in out
+    assert "Successfully downloaded!" not in out
