@@ -1,3 +1,5 @@
+import sys
+
 from . import config
 from . import downloader
 from .cli import parse_args, apply_overrides
@@ -5,7 +7,15 @@ from .batch import run_batch
 from .repl import run_repl
 
 
+def _make_output_safe():
+    """Redirected output on Windows uses a legacy encoding that can't hold
+    every character in a video title; those are replaced instead of raising."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
+
 def main():
+    _make_output_safe()
     args = parse_args()
 
     #checked before loading so it still works when config.toml is broken
