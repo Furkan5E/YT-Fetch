@@ -11,7 +11,7 @@ def _raise_interrupt(*args, **kwargs):
 
 
 def test_download_video_reports_cancel_and_reraises(monkeypatch, tmp_path, capsys):
-    monkeypatch.setattr(core, "build_ydl_opts", lambda config: {"paths": {"home": str(tmp_path)}})
+    monkeypatch.setattr(core, "build_ydl_opts", lambda config: {"paths": {"home": str(tmp_path)}, "logger": None})
     monkeypatch.setattr(core, "_download", _raise_interrupt)
 
     with pytest.raises(KeyboardInterrupt):

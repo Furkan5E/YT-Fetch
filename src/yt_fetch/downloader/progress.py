@@ -6,12 +6,12 @@ def clean_message(msg, prefix):
     return remove_terminal_sequences(str(msg)).strip().removeprefix(prefix).strip()
 
 class QuietLogger:
-    """A yt-dlp logger that hides yt-dlp's chatter but shows warnings, once
-    each, since they explain things like missing formats. Errors are also
-    raised as DownloadError, which download_video prints, so printing them
-    here too would show each one twice."""
+    """A yt-dlp logger that hides yt-dlp's chatter but shows warnings and
+    errors, once each. Errors are kept in `errors` so download_video can tell
+    whether anything went wrong, since yt-dlp is set to carry on after them."""
     def __init__(self):
         self._seen_warnings = set()
+        self.errors = []
 
     def debug(self, msg):
         pass
@@ -25,7 +25,11 @@ class QuietLogger:
         #starts on a new line so it doesn't run into the progress line
         print(f"\n[Warning] {msg}")
     def error(self, msg):
-        pass
+        msg = clean_message(msg, 'ERROR:')
+        if msg in self.errors:
+            return
+        self.errors.append(msg)
+        print(f"\n[Error] {msg}")
 
 def minimalist_progress_hook(d):
     if d['status'] == 'downloading':

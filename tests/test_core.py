@@ -5,6 +5,7 @@ import pytest
 import yt_dlp
 
 from yt_fetch.downloader import core
+from yt_fetch.downloader.progress import QuietLogger
 
 
 TOP_RESULT = {
@@ -67,7 +68,8 @@ class _FakeYDL:
 
 @pytest.fixture
 def fake_ydl(monkeypatch, tmp_path):
-    monkeypatch.setattr(core, "build_ydl_opts", lambda config: {"paths": {"home": str(tmp_path)}})
+    monkeypatch.setattr(core, "build_ydl_opts",
+                        lambda config: {"paths": {"home": str(tmp_path)}, "logger": QuietLogger()})
     monkeypatch.setattr(core, "build_extra_postprocessors", lambda config: [])
     monkeypatch.setattr(core.yt_dlp, "YoutubeDL", _FakeYDL)
     #unless a test says otherwise, every download saves one file
@@ -372,3 +374,39 @@ def test_links_are_never_asked_about(fake_ydl):
 ])
 def test_search_results_are_described_with_what_is_known(result, expected):
     assert core._describe(result) == expected
+
+
+def test_playlist_with_a_failed_video_keeps_the_rest_but_is_not_a_success(fake_ydl, tmp_path, capsys):
+    def action(ydl):
+        ydl.finish(tmp_path / "one.mp3")
+        #yt-dlp carries on after an error and reports it to the logger
+        ydl.opts["logger"].error("ERROR: [youtube] two: Private video")
+        ydl.finish(tmp_path / "three.mp3")
+    fake_ydl.action = action
+
+    assert core.download_video(PLAYLIST_URL, {"allow_playlists": True}) is False
+
+    out = capsys.readouterr().out
+    assert "[Error] [youtube] two: Private video" in out
+    assert "Finished, but not everything could be downloaded" in out
+    assert f"Saved 2 files to: {tmp_path}" in out
+    assert "Successfully downloaded!" not in out
+
+
+def test_reported_error_is_not_followed_by_a_second_message(fake_ydl, capsys):
+    fake_ydl.action = lambda ydl: ydl.opts["logger"].error("ERROR: [youtube] abc: This video is unavailable")
+
+    assert core.download_video("https://example.com/v", {}) is False
+
+    out = capsys.readouterr().out
+    assert out.count("[Error]") == 1
+    assert "Nothing to download" not in out
+
+
+def test_failed_extraction_is_not_processed(fake_ydl):
+    #what yt-dlp returns once it has reported the error
+    fake_ydl.extracted = {"https://example.com/v": None}
+
+    assert core.download_video("https://example.com/v", {}) is False
+
+    assert "download" not in fake_ydl.calls

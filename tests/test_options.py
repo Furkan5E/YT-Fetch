@@ -230,3 +230,7 @@ def test_warnings_reach_the_logger(tmp_path):
 
     assert opts["no_warnings"] is False
     assert isinstance(opts["logger"], QuietLogger)
+
+
+def test_errors_do_not_stop_the_rest_of_a_playlist(tmp_path):
+    assert build_ydl_opts(_config(tmp_path))["ignoreerrors"] is True

@@ -26,14 +26,23 @@ def test_each_download_starts_with_no_warnings_seen(capsys):
     assert capsys.readouterr().out.count("[Warning]") == 2
 
 
-def test_debug_info_and_errors_stay_quiet(capsys):
+def test_debug_and_info_stay_quiet(capsys):
     logger = QuietLogger()
 
     logger.debug("[debug] Command-line config")
     logger.info("[youtube] Extracting URL")
-    logger.error("ERROR: printed by download_video instead")
 
     assert capsys.readouterr().out == ""
+
+
+def test_errors_are_shown_once_and_remembered(capsys):
+    logger = QuietLogger()
+
+    logger.error("\x1b[0;31mERROR:\x1b[0m [youtube] abc: Private video")
+    logger.error("ERROR: [youtube] abc: Private video")
+
+    assert capsys.readouterr().out == "\n[Error] [youtube] abc: Private video\n"
+    assert logger.errors == ["[youtube] abc: Private video"]
 
 
 def test_clean_message_strips_the_given_prefix():

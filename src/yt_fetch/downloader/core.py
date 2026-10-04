@@ -8,7 +8,6 @@ import yt_dlp
 
 from .ffmpeg import FFmpegNotFoundError
 from .options import build_ydl_opts, build_extra_postprocessors
-from .progress import clean_message
 
 
 _BARE_URL = re.compile(r'^[\w-]+(\.[\w-]+)+/')
@@ -107,6 +106,7 @@ def download_video(video_url, config, confirm_search=None):
 def _download(video_url, config, ydl_opts, confirm_search=None):
     #the final path of every video that fully finishes
     completed = []
+    logger = ydl_opts['logger']
     is_search = not looks_like_url(video_url)
     if not is_search and '://' not in video_url:
         #without a scheme yt-dlp would search for the link's text instead of opening it
@@ -140,24 +140,30 @@ def _download(video_url, config, ydl_opts, confirm_search=None):
                 if info.get('_type') == 'playlist':
                     _print_playlist_refused(info)
                     return False
-                #carries on from the extraction above instead of repeating it
-                ydl.process_ie_result(info, download=True)
+                #empty if the extraction failed, which the logger has reported
+                if info:
+                    #carries on from the extraction above instead of repeating it
+                    ydl.process_ie_result(info, download=True)
 
-            #a search with no results or an empty playlist finishes without an error
-            if not completed:
-                if is_search:
-                    print(f"\n[Error] No results for: {video_url}")
-                else:
-                    print("\n[Error] Nothing to download from that link.")
-                return False
-            print("\nSuccessfully downloaded!")
-            _print_saved(completed)
-            return True
-
-    #process_ie_result raises yt-dlp's other errors without wrapping them in DownloadError
+    #most errors reach the logger without being raised, but not all of them
     except yt_dlp.utils.YoutubeDLError as e:
-        print(f"\n[Error] {clean_message(e, 'ERROR:')}")
-        return False
+        logger.error(str(e))
     except Exception as e:
         print(f"\nAn unexpected error occurred: {e}")
         return False
+
+    if not completed:
+        #a search with no results or an empty playlist finishes without an error
+        if not logger.errors:
+            if is_search:
+                print(f"\n[Error] No results for: {video_url}")
+            else:
+                print("\n[Error] Nothing to download from that link.")
+        return False
+    if logger.errors:
+        #e.g. a playlist with a private video in it
+        print("\nFinished, but not everything could be downloaded (see the errors above).")
+    else:
+        print("\nSuccessfully downloaded!")
+    _print_saved(completed)
+    return not logger.errors
