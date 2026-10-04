@@ -31,14 +31,21 @@ def srt_to_lyrics(srt_text):
     return '\n'.join(lines)
 
 
+def _preferred_language(languages):
+    """Prefers an English track, otherwise the first one."""
+    languages = list(languages)
+    for lang in languages:
+        if lang.startswith('en'):
+            return lang
+    return languages[0] if languages else None
+
+
 def _pick_subtitle(subtitles):
-    """Prefers an English track, otherwise the first one downloaded."""
+    """The preferred track out of those that were downloaded."""
     available = {lang: sub for lang, sub in subtitles.items()
                  if sub.get('filepath') and os.path.exists(sub['filepath'])}
-    for lang in available:
-        if lang.startswith('en'):
-            return lang, available[lang]
-    return next(iter(available.items()), (None, None))
+    lang = _preferred_language(available)
+    return lang, available.get(lang)
 
 
 def _uslt(lyrics, lang):
@@ -74,6 +81,18 @@ def write_lyrics(path, lyrics, lang):
     else:
         return False
     return True
+
+
+class PickLyricsTrackPP(PostProcessor):
+    """Narrows the subtitles yt-dlp is about to download to the one track the
+    lyrics are taken from, instead of fetching every language a video has."""
+
+    def run(self, info):
+        subtitles = info.get('requested_subtitles')
+        if subtitles:
+            lang = _preferred_language(subtitles)
+            info['requested_subtitles'] = {lang: subtitles[lang]}
+        return [], info
 
 
 class EmbedLyricsPP(PostProcessor):

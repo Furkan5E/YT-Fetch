@@ -5,7 +5,7 @@ import pytest
 from mutagen.id3 import ID3
 from static_ffmpeg.run import get_or_fetch_platform_executables_else_raise
 
-from yt_fetch.downloader.lyrics import EmbedLyricsPP, srt_to_lyrics, write_lyrics
+from yt_fetch.downloader.lyrics import EmbedLyricsPP, PickLyricsTrackPP, srt_to_lyrics, write_lyrics
 
 SRT = """1
 00:00:18,800 --> 00:00:21,800
@@ -120,3 +120,24 @@ def test_write_lyrics_reports_unsupported_types(tmp_path):
     path.write_bytes(b"")
 
     assert write_lyrics(str(path), "text", "en") is False
+
+
+def test_only_the_english_track_is_downloaded_for_lyrics():
+    info = {"requested_subtitles": {"de": {"url": "de"}, "en-GB": {"url": "en"}, "fr": {"url": "fr"}}}
+
+    _, info = PickLyricsTrackPP().run(info)
+
+    assert info["requested_subtitles"] == {"en-GB": {"url": "en"}}
+
+
+def test_first_track_is_downloaded_when_there_is_no_english():
+    info = {"requested_subtitles": {"tr": {"url": "tr"}, "de": {"url": "de"}}}
+
+    _, info = PickLyricsTrackPP().run(info)
+
+    assert info["requested_subtitles"] == {"tr": {"url": "tr"}}
+
+
+@pytest.mark.parametrize("info", [{}, {"requested_subtitles": None}, {"requested_subtitles": {}}])
+def test_videos_without_subtitles_are_left_alone(info):
+    assert PickLyricsTrackPP().run(dict(info)) == ([], info)

@@ -1,7 +1,7 @@
 import os
 
 from .ffmpeg import get_ffmpeg_path
-from .lyrics import EmbedLyricsPP
+from .lyrics import EmbedLyricsPP, PickLyricsTrackPP
 from .progress import QuietLogger, minimalist_progress_hook
 from .sponsors import TolerantSponsorBlockPP
 
@@ -18,8 +18,9 @@ SPONSOR_CATEGORIES = ['sponsor', 'interaction', 'intro', 'outro']
 
 def _add_lyrics_opts(opts, config):
     """Downloads the video's subtitles to use as lyrics. Video formats get
-    them as subtitle tracks; audio formats can't hold those, so EmbedLyricsPP
-    (see build_extra_postprocessors) writes them into a lyrics tag instead."""
+    them all as subtitle tracks; audio formats can't hold those, so one track
+    is picked and written into a lyrics tag instead (PickLyricsTrackPP and
+    EmbedLyricsPP, see build_extra_postprocessors)."""
     if config.get('embed_lyrics', False):
         opts['writesubtitles'] = True
         opts['subtitleslangs'] = ['all', '-live_chat']
@@ -131,5 +132,6 @@ def build_extra_postprocessors(config):
     if config.get('remove_sponsors', True):
         extra.append((TolerantSponsorBlockPP(None, categories=SPONSOR_CATEGORIES), 'after_filter'))
     if config.get('embed_lyrics', False) and config['type'] in AUDIO_TYPES:
+        extra.append((PickLyricsTrackPP(), 'after_filter'))
         extra.append((EmbedLyricsPP(), 'post_process'))
     return extra

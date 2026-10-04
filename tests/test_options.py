@@ -2,7 +2,7 @@ import pytest
 
 from yt_fetch import config
 from yt_fetch.downloader import options as options_module
-from yt_fetch.downloader.lyrics import EmbedLyricsPP
+from yt_fetch.downloader.lyrics import EmbedLyricsPP, PickLyricsTrackPP
 from yt_fetch.downloader.options import build_ydl_opts, build_extra_postprocessors
 from yt_fetch.downloader.progress import QuietLogger
 from yt_fetch.downloader.sponsors import TolerantSponsorBlockPP
@@ -93,6 +93,14 @@ def test_remove_sponsors_adds_sponsorblock_postprocessors(tmp_path):
     assert isinstance(pp, TolerantSponsorBlockPP) and when == "after_filter"
 
 
+#one track is picked before the subtitles are downloaded, then embedded at the end
+LYRICS_POSTPROCESSORS = [(PickLyricsTrackPP, "after_filter"), (EmbedLyricsPP, "post_process")]
+
+
+def _lyrics_postprocessors(extra):
+    return [(type(pp), when) for pp, when in extra]
+
+
 def test_embed_lyrics_downloads_all_subtitle_languages(tmp_path):
     opts = build_ydl_opts(_config(tmp_path, embed_lyrics=True))
 
@@ -116,7 +124,7 @@ def test_embed_lyrics_mp3_uses_lyrics_postprocessor(tmp_path):
     extra = build_extra_postprocessors(cfg)
 
     assert "FFmpegEmbedSubtitle" not in keys
-    assert len(extra) == 1 and isinstance(extra[0][0], EmbedLyricsPP)
+    assert _lyrics_postprocessors(extra) == LYRICS_POSTPROCESSORS
 
 
 def test_embed_lyrics_off_adds_nothing(tmp_path):
@@ -218,7 +226,7 @@ def test_no_thumbnail_embedding_where_unsupported(tmp_path, media_type):
 def test_embed_lyrics_uses_lyrics_postprocessor_for_all_audio(tmp_path, audio_type):
     extra = build_extra_postprocessors(_config(tmp_path, type=audio_type, embed_lyrics=True))
 
-    assert len(extra) == 1 and isinstance(extra[0][0], EmbedLyricsPP)
+    assert _lyrics_postprocessors(extra) == LYRICS_POSTPROCESSORS
 
 
 def test_non_links_are_searched_on_youtube(tmp_path):
