@@ -100,7 +100,8 @@ def parse_value(key, text):
     text = text.lower()
     if key in BOOL_KEYS and text in ("true", "false"):
         return text == "true"
-    if text.isdigit():
+    #isdigit() alone also accepts characters like "²", which int() can't read
+    if text.isascii() and text.isdigit():
         return int(text)
     return text
 

@@ -249,3 +249,15 @@ def test_saving_rewrites_legacy_encoding_as_utf8(isolated_config, monkeypatch):
 
     with open(config.get_config_file(), "rb") as f:
         assert "Müzik".encode("utf-8") in f.read()
+
+
+@pytest.mark.parametrize("text", ["²", "٣٢٠", "1²"])
+def test_digits_int_cannot_read_are_left_as_text(text):
+    assert config.parse_value("quality", text) == text
+
+
+def test_non_ascii_digit_is_rejected_like_any_invalid_value(isolated_config, capsys):
+    cfg = config.load_config()
+
+    assert config.validate_and_update(cfg, "quality", config.parse_value("quality", "²")) is False
+    assert "Invalid value for 'quality'" in capsys.readouterr().out
