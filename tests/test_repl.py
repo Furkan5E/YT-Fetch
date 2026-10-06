@@ -165,3 +165,11 @@ def test_confirm_search_is_no_when_input_ends(monkeypatch):
     monkeypatch.setattr("builtins.input", end_of_input)
 
     assert repl.confirm_search() is False
+
+
+def test_quality_is_reported_in_kbps(isolated_config, capsys):
+    saved_config = config.load_config()
+
+    handle_config_command([".config", "quality", "320"], dict(saved_config), saved_config)
+
+    assert "quality is set to 320kbps" in capsys.readouterr().out

@@ -45,7 +45,7 @@ def handle_config_command(parts, current_config, saved_config):
             if success:
                 current_config[key] = value
                 if key == "quality":
-                    print(f"quality is set to {value}kbs")
+                    print(f"quality is set to {value}kbps")
                 else:
                     print(f"{key} is set to {config.format_value(value)}")
         else:
