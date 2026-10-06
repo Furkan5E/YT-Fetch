@@ -52,7 +52,13 @@ def parse_args():
         action="store_true",
         help="Print the location of config.toml, then exit."
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    #--batch's file is optional, so a link straight after it would be taken as the file
+    if args.batch is not None and "://" in args.batch:
+        parser.error("--batch takes a file of links, not a link. To download a link, pass it without --batch.")
+    if args.url and args.batch:
+        parser.error("pass either a link or --batch, not both.")
+    return args
 
 def apply_overrides(current_config, args):
     """Returns a copy of current_config with any passed CLI flags applied

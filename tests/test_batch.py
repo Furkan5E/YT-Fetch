@@ -1,4 +1,4 @@
-from yt_fetch import batch
+from yt_fetch import batch, config
 
 
 def _run(tmp_path, monkeypatch, text):

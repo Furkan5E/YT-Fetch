@@ -5,7 +5,7 @@ import sys
 import pytest
 
 import yt_fetch
-from yt_fetch import cli
+from yt_fetch import cli, config
 
 
 def _args(**overrides):
@@ -108,3 +108,29 @@ def test_get_version_falls_back_when_not_installed(monkeypatch):
     monkeypatch.setattr(yt_fetch, "version", not_installed)
 
     assert yt_fetch.get_version() == "unknown"
+
+
+def test_batch_without_a_file_uses_the_default(monkeypatch, isolated_config):
+    monkeypatch.setattr(sys, "argv", ["yt-fetch", "--batch"])
+
+    assert cli.parse_args().batch == config.get_batch_file()
+
+
+def test_batch_does_not_take_a_link_as_its_file(monkeypatch, isolated_config, capsys):
+    monkeypatch.setattr(sys, "argv", ["yt-fetch", "--batch", "https://example.com/v"])
+
+    with pytest.raises(SystemExit) as exit_info:
+        cli.parse_args()
+
+    assert exit_info.value.code == 2
+    assert "--batch takes a file of links, not a link" in capsys.readouterr().err
+
+
+def test_link_and_batch_together_are_rejected(monkeypatch, isolated_config, capsys):
+    monkeypatch.setattr(sys, "argv", ["yt-fetch", "https://example.com/v", "--batch", "links.txt"])
+
+    with pytest.raises(SystemExit) as exit_info:
+        cli.parse_args()
+
+    assert exit_info.value.code == 2
+    assert "pass either a link or --batch, not both" in capsys.readouterr().err
