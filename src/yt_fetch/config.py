@@ -6,7 +6,8 @@ import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
 def _user_config_dir():
-    """The OS-standard per-user config location."""
+    """The OS-standard per-user config location. It's only created once
+    something is saved there, so --help and --config-path leave no trace."""
     system = platform.system()
     if system == 'Windows':
         base = os.environ.get('APPDATA', os.path.expanduser('~'))
@@ -14,9 +15,7 @@ def _user_config_dir():
         base = os.path.expanduser('~/Library/Application Support')
     else:
         base = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
-    path = os.path.join(base, 'yt-fetch')
-    os.makedirs(path, exist_ok=True)
-    return path
+    return os.path.join(base, 'yt-fetch')
 
 _base_dir_cache = {'value': None}
 
@@ -191,6 +190,7 @@ def save_config(config):
     else:
         doc = _new_document(config)
 
+    os.makedirs(os.path.dirname(config_file), exist_ok=True)
     with open(config_file, 'w', encoding='utf-8') as f:
         f.write(doc.as_string())
 

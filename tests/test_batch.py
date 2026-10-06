@@ -86,3 +86,12 @@ def test_non_utf8_comments_do_not_break_reading(tmp_path, monkeypatch):
     batch.run_batch(str(batch_file), {})
 
     assert attempted == ["https://example.com/b"]
+
+
+def test_default_batch_file_is_created_along_with_its_folder(tmp_path, monkeypatch):
+    folder = tmp_path / "not" / "there" / "yet"
+    monkeypatch.setattr(config, "get_base_dir", lambda: str(folder))
+
+    assert batch.run_batch(config.get_batch_file(), {}) is False
+
+    assert (folder / "batch.txt").is_file()

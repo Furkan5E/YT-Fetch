@@ -14,6 +14,7 @@ def run_batch(batch_file, current_config):
     if not os.path.exists(batch_file):
         #only the default file is created; a missing custom path is more likely a typo
         if os.path.abspath(batch_file) == os.path.abspath(config.get_batch_file()):
+            os.makedirs(os.path.dirname(batch_file), exist_ok=True)
             with open(batch_file, "w", encoding="utf-8") as f:
                 f.write(BATCH_FILE_HEADER)
             print(f"\nCreated {batch_file}. Add links to it (one per line) and run batch again.")

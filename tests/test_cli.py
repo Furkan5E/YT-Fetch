@@ -134,3 +134,15 @@ def test_link_and_batch_together_are_rejected(monkeypatch, isolated_config, caps
 
     assert exit_info.value.code == 2
     assert "pass either a link or --batch, not both" in capsys.readouterr().err
+
+
+def test_help_does_not_create_the_config_folder(monkeypatch, tmp_path):
+    monkeypatch.setitem(config._base_dir_cache, "value", None)
+    monkeypatch.setattr(config.platform, "system", lambda: "Linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.setattr(sys, "argv", ["yt-fetch", "--help"])
+
+    with pytest.raises(SystemExit):
+        cli.parse_args()
+
+    assert list(tmp_path.iterdir()) == []

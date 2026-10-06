@@ -197,7 +197,17 @@ def test_base_dir_is_user_config_dir_not_install_dir(fresh_base_dir, tmp_path, m
     base_dir = config.get_base_dir()
 
     assert base_dir == os.path.join(str(tmp_path), "yt-fetch")
-    assert os.path.isdir(base_dir)
+    #only created once something is saved in it
+    assert not os.path.exists(base_dir)
+
+
+def test_config_folder_is_created_when_settings_are_saved(fresh_base_dir, tmp_path, monkeypatch):
+    monkeypatch.setattr(config.platform, "system", lambda: "Linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+
+    config.load_config()
+
+    assert os.path.isfile(os.path.join(str(tmp_path), "yt-fetch", "config.toml"))
 
 
 def test_base_dir_uses_appdata_on_windows(fresh_base_dir, tmp_path, monkeypatch):
