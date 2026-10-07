@@ -367,3 +367,64 @@ def test_key_in_another_case_is_updated_in_place(isolated_config):
     assert 'Type = "flac"' in text
     assert "\ntype" not in text
     assert config.load_config()["type"] == "flac"
+
+
+def _fail_to_write(monkeypatch):
+    real_open = open
+
+    def read_only(file, mode="r", *args, **kwargs):
+        if "w" in mode:
+            raise PermissionError(13, "Permission denied")
+        return real_open(file, mode, *args, **kwargs)
+    monkeypatch.setattr("builtins.open", read_only)
+
+
+def test_setting_is_not_changed_when_it_cannot_be_saved(isolated_config, monkeypatch, capsys):
+    cfg = config.load_config()
+    _fail_to_write(monkeypatch)
+
+    assert config.validate_and_update(cfg, "quality", 320) is False
+
+    assert cfg["quality"] == 192
+    assert "Couldn't save settings to" in capsys.readouterr().out
+
+
+def test_reset_changes_nothing_when_it_cannot_be_saved(isolated_config, monkeypatch, capsys):
+    cfg = config.load_config()
+    config.validate_and_update(cfg, "quality", 320)
+    _fail_to_write(monkeypatch)
+
+    assert config.reset_config(cfg) == []
+
+    assert cfg["quality"] == 320
+    assert "Couldn't save settings to" in capsys.readouterr().out
+
+
+def test_first_run_still_works_when_the_config_cannot_be_written(isolated_config, monkeypatch, capsys):
+    _fail_to_write(monkeypatch)
+
+    assert config.load_config() == config._default_config()
+    assert "Couldn't save settings to" in capsys.readouterr().out
+
+
+def test_file_broken_while_running_does_not_crash_a_save(isolated_config, capsys):
+    cfg = config.load_config()
+    _write_config("type = = broken\n")
+
+    assert config.validate_and_update(cfg, "quality", 320) is False
+
+    assert "Couldn't save settings to" in capsys.readouterr().out
+
+
+def test_unreadable_config_exits_with_a_message(isolated_config, monkeypatch, capsys):
+    config.load_config()
+
+    def locked(config_file):
+        raise PermissionError(13, "Permission denied")
+    monkeypatch.setattr(config, "_read_document", locked)
+
+    with pytest.raises(SystemExit) as exit_info:
+        config.load_config()
+
+    assert exit_info.value.code == 1
+    assert "Couldn't read" in capsys.readouterr().out

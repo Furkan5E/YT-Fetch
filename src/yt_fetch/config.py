@@ -171,6 +171,9 @@ def load_config():
         print(f"\n[Error] {config_file} is not valid TOML: {e}")
         print("        Fix the file, or delete it to restore the defaults.")
         raise SystemExit(1)
+    except (OSError, UnicodeError) as e:
+        print(f"\n[Error] Couldn't read {config_file}: {e}")
+        raise SystemExit(1)
 
     config = {}
     for key, value in loaded.items():
@@ -196,31 +199,40 @@ def load_config():
     return config
 
 def save_config(config):
-    """Saves the dictionary to config.toml, keeping any comments already in the file."""
+    """Saves the dictionary to config.toml, keeping any comments already in
+    the file. Returns False, after saying why, if it couldn't be saved."""
     config_file = get_config_file()
-    if os.path.exists(config_file):
-        doc = _read_document(config_file)
-        #a key written as "Type" is updated in place rather than joined by a second "type"
-        existing = {name.strip().lower(): name for name in doc}
-        for key, value in config.items():
-            doc[existing.get(key, key)] = _toml_value(key, value)
-    else:
-        doc = _new_document(config)
+    try:
+        if os.path.exists(config_file):
+            doc = _read_document(config_file)
+            #a key written as "Type" is updated in place rather than joined by a second "type"
+            existing = {name.strip().lower(): name for name in doc}
+            for key, value in config.items():
+                doc[existing.get(key, key)] = _toml_value(key, value)
+        else:
+            doc = _new_document(config)
 
-    os.makedirs(os.path.dirname(config_file), exist_ok=True)
-    with open(config_file, 'w', encoding='utf-8') as f:
-        f.write(doc.as_string())
+        os.makedirs(os.path.dirname(config_file), exist_ok=True)
+        with open(config_file, 'w', encoding='utf-8') as f:
+            f.write(doc.as_string())
+    #e.g. a read-only folder, or the file was broken by hand while yt-fetch was open
+    except (OSError, UnicodeError, TOMLKitError) as e:
+        print(f"\n[Error] Couldn't save settings to {config_file}: {e}")
+        return False
+    return True
 
 def reset_config(config, key=None):
     """Resets one key, or every key, to its default and saves. Returns the
-    keys that were reset, or None if key isn't a known setting."""
+    keys that were reset (none if saving failed), or None if key isn't a
+    known setting."""
     defaults = _default_config()
     if key is not None and key not in defaults:
         return None
     keys = [key] if key is not None else list(defaults)
-    for k in keys:
-        config[k] = defaults[k]
-    save_config(config)
+    updated = {**config, **{k: defaults[k] for k in keys}}
+    if not save_config(updated):
+        return []
+    config.update(updated)
     return keys
 
 def validate_and_update(config, key, value):
@@ -236,6 +248,8 @@ def validate_and_update(config, key, value):
         print(f"\n[Error] No ffmpeg found at '{value}'. Give the path to ffmpeg, or 'auto' to have it found for you.")
         return False
 
+    #config is only changed once the file has been, so the two can't disagree
+    if not save_config({**config, key: value}):
+        return False
     config[key] = value
-    save_config(config)
     return True

@@ -173,3 +173,14 @@ def test_quality_is_reported_in_kbps(isolated_config, capsys):
     handle_config_command([".config", "quality", "320"], dict(saved_config), saved_config)
 
     assert "quality is set to 320kbps" in capsys.readouterr().out
+
+
+def test_failed_reset_is_not_announced(isolated_config, monkeypatch, capsys):
+    saved_config = config.load_config()
+    current_config = {**saved_config, "quality": 320}
+    monkeypatch.setattr(config, "save_config", lambda cfg: False)
+
+    handle_config_command([".config", "reset"], current_config, saved_config)
+
+    assert "All settings reset" not in capsys.readouterr().out
+    assert current_config["quality"] == 320

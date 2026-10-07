@@ -13,6 +13,9 @@ def handle_config_command(parts, current_config, saved_config):
         if reset_keys is None:
             print(f"Unknown config key: '{key}'")
             return
+        #saving failed, which reset_config has reported
+        if not reset_keys:
+            return
         for k in reset_keys:
             current_config[k] = saved_config[k]
         if key is None:
