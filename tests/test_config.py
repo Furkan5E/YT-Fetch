@@ -161,6 +161,41 @@ def test_output_dir_relative_paths_become_absolute(monkeypatch, tmp_path):
     assert config.parse_value("output_dir", "Music") == str(tmp_path / "Music")
 
 
+@pytest.mark.parametrize("quote", ['"', "'"])
+def test_ffmpeg_path_strips_surrounding_quotes(quote):
+    typed = f"{quote}C:\\Program Files\\ffmpeg\\ffmpeg.exe{quote}"
+
+    assert config.parse_value("ffmpeg_path", typed) == "C:\\Program Files\\ffmpeg\\ffmpeg.exe"
+
+
+def test_ffmpeg_path_expands_home(monkeypatch, tmp_path):
+    monkeypatch.setattr(config.os.path, "expanduser", lambda path: path.replace("~", str(tmp_path)))
+
+    assert config.parse_value("ffmpeg_path", "~/bin/ffmpeg") == f"{tmp_path}/bin/ffmpeg"
+
+
+def test_ffmpeg_path_auto_in_any_case():
+    assert config.parse_value("ffmpeg_path", "AUTO") == "auto"
+
+
+def test_ffmpeg_path_that_does_not_exist_is_not_saved(isolated_config, tmp_path, capsys):
+    cfg = config.load_config()
+
+    assert config.validate_and_update(cfg, "ffmpeg_path", str(tmp_path / "nope" / "ffmpeg.exe")) is False
+
+    assert "No ffmpeg found at" in capsys.readouterr().out
+    assert config.load_config()["ffmpeg_path"] == "auto"
+
+
+def test_ffmpeg_path_that_exists_is_saved(isolated_config, tmp_path):
+    ffmpeg = tmp_path / "ffmpeg.exe"
+    ffmpeg.write_text("")
+    cfg = config.load_config()
+
+    assert config.validate_and_update(cfg, "ffmpeg_path", str(ffmpeg)) is True
+    assert config.validate_and_update(cfg, "ffmpeg_path", "auto") is True
+
+
 def test_ffmpeg_path_is_not_made_absolute():
     #"ffmpeg" on its own means "look on PATH", so it must stay as typed
     assert config.parse_value("ffmpeg_path", "ffmpeg") == "ffmpeg"

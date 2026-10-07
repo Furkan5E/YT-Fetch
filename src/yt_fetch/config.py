@@ -1,6 +1,7 @@
 import locale
 import os
 import platform
+import shutil
 
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
@@ -80,22 +81,28 @@ def format_value(value):
         return "true" if value else "false"
     return str(value)
 
-def normalise_path(text):
-    """Expands ~ and environment variables, drops the quotes Windows' "Copy as
-    path" adds, and makes the path absolute so it doesn't depend on the
-    folder yt-fetch was started from."""
+def expand_path(text):
+    """Drops the quotes Windows' "Copy as path" adds, and expands ~ and
+    environment variables."""
     text = text.strip()
     if len(text) >= 2 and text[0] == text[-1] and text[0] in ('"', "'"):
         text = text[1:-1].strip()
-    return os.path.abspath(os.path.expandvars(os.path.expanduser(text)))
+    return os.path.expandvars(os.path.expanduser(text))
+
+def normalise_path(text):
+    """expand_path, then made absolute so the path doesn't depend on the
+    folder yt-fetch was started from."""
+    return os.path.abspath(expand_path(text))
 
 def parse_value(key, text):
     """Converts text typed on the CLI or in the REPL into a typed config value."""
     text = text.strip()
     if key == 'output_dir':
         return normalise_path(text)
-    if key in CASE_SENSITIVE_KEYS:
-        return text
+    if key == 'ffmpeg_path':
+        #not made absolute, since a bare "ffmpeg" means the one on PATH
+        text = expand_path(text)
+        return 'auto' if text.lower() == 'auto' else text
     text = text.lower()
     if key in BOOL_KEYS and text in ("true", "false"):
         return text == "true"
@@ -211,6 +218,9 @@ def validate_and_update(config, key, value):
     if not is_valid(key, value):
         allowed = ', '.join(format_value(v) for v in VALID_OPTIONS[key])
         print(f"\n[Error] Invalid value for '{key}'. Allowed options are: {allowed}")
+        return False
+    if key == 'ffmpeg_path' and value != 'auto' and not (os.path.exists(value) or shutil.which(value)):
+        print(f"\n[Error] No ffmpeg found at '{value}'. Give the path to ffmpeg, or 'auto' to have it found for you.")
         return False
 
     config[key] = value
