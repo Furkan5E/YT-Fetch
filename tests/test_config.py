@@ -332,3 +332,38 @@ def test_load_config_repairs_paths_that_are_empty_or_not_text(isolated_config, c
 
     assert cfg[key] == config._default_config()[key]
     assert f"for '{key}' in config.toml" in capsys.readouterr().out
+
+
+def test_unknown_keys_are_ignored_with_a_warning(isolated_config, capsys):
+    _write_config('typ = "mp4"\n\n[extra]\nnote = 1\n')
+
+    cfg = config.load_config()
+
+    assert set(cfg) == set(config._default_config())
+    out = capsys.readouterr().out
+    assert "Unknown setting 'typ' in config.toml was ignored." in out
+    assert "Unknown setting 'extra'" in out
+
+
+def test_unknown_keys_stay_in_the_file_when_saving(isolated_config, capsys):
+    _write_config('typ = "mp4"\n')
+    cfg = config.load_config()
+
+    config.validate_and_update(cfg, "quality", 320)
+
+    with open(config.get_config_file(), encoding="utf-8") as f:
+        assert 'typ = "mp4"' in f.read()
+
+
+def test_key_in_another_case_is_updated_in_place(isolated_config):
+    _write_config('Type = "mp4"\n')
+    cfg = config.load_config()
+    assert cfg["type"] == "mp4"
+
+    config.validate_and_update(cfg, "type", "flac")
+
+    with open(config.get_config_file(), encoding="utf-8") as f:
+        text = f.read()
+    assert 'Type = "flac"' in text
+    assert "\ntype" not in text
+    assert config.load_config()["type"] == "flac"

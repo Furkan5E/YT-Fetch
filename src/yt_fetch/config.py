@@ -175,6 +175,10 @@ def load_config():
     config = {}
     for key, value in loaded.items():
         clean_key = key.strip().lower()
+        if clean_key not in defaults:
+            #most likely a typo; it stays in the file but isn't treated as a setting
+            print(f"\n[Warning] Unknown setting '{key}' in config.toml was ignored.")
+            continue
         #accept hand-written strings like "true" or "1080" as well as real TOML types
         config[clean_key] = parse_value(clean_key, value) if isinstance(value, str) else value
 
@@ -196,8 +200,10 @@ def save_config(config):
     config_file = get_config_file()
     if os.path.exists(config_file):
         doc = _read_document(config_file)
+        #a key written as "Type" is updated in place rather than joined by a second "type"
+        existing = {name.strip().lower(): name for name in doc}
         for key, value in config.items():
-            doc[key] = _toml_value(key, value)
+            doc[existing.get(key, key)] = _toml_value(key, value)
     else:
         doc = _new_document(config)
 
