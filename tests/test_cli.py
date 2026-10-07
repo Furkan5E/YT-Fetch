@@ -146,3 +146,14 @@ def test_help_does_not_create_the_config_folder(monkeypatch, tmp_path):
         cli.parse_args()
 
     assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("value", ["", "  ", '""'])
+def test_empty_output_dir_flag_is_rejected(monkeypatch, isolated_config, capsys, value):
+    monkeypatch.setattr(sys, "argv", ["yt-fetch", "--output-dir", value])
+
+    with pytest.raises(SystemExit) as exit_info:
+        cli.parse_args()
+
+    assert exit_info.value.code == 2
+    assert "--output-dir needs a folder" in capsys.readouterr().err

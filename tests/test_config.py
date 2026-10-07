@@ -306,3 +306,29 @@ def test_non_ascii_digit_is_rejected_like_any_invalid_value(isolated_config, cap
 
     assert config.validate_and_update(cfg, "quality", config.parse_value("quality", "²")) is False
     assert "Invalid value for 'quality'" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("text", ["", "   ", '""'])
+def test_empty_output_dir_is_not_the_current_folder(text):
+    assert config.parse_value("output_dir", text) == ""
+
+
+def test_empty_output_dir_is_not_saved(isolated_config, capsys):
+    cfg = config.load_config()
+    before = cfg["output_dir"]
+
+    assert config.validate_and_update(cfg, "output_dir", config.parse_value("output_dir", '""')) is False
+
+    assert "'output_dir' needs a path." in capsys.readouterr().out
+    assert config.load_config()["output_dir"] == before
+
+
+@pytest.mark.parametrize("line", ['output_dir = ""', "output_dir = 5", "ffmpeg_path = true", 'ffmpeg_path = ""'])
+def test_load_config_repairs_paths_that_are_empty_or_not_text(isolated_config, capsys, line):
+    _write_config(line + "\n")
+    key = line.split()[0]
+
+    cfg = config.load_config()
+
+    assert cfg[key] == config._default_config()[key]
+    assert f"for '{key}' in config.toml" in capsys.readouterr().out

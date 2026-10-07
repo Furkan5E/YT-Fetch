@@ -56,6 +56,8 @@ def parse_args():
     #--batch's file is optional, so a link straight after it would be taken as the file
     if args.batch is not None and "://" in args.batch:
         parser.error("--batch takes a file of links, not a link. To download a link, pass it without --batch.")
+    if args.output_dir is not None and not config.parse_value("output_dir", args.output_dir):
+        parser.error("--output-dir needs a folder.")
     if args.url and args.batch:
         parser.error("pass either a link or --batch, not both.")
     return args

@@ -92,7 +92,9 @@ def expand_path(text):
 def normalise_path(text):
     """expand_path, then made absolute so the path doesn't depend on the
     folder yt-fetch was started from."""
-    return os.path.abspath(expand_path(text))
+    text = expand_path(text)
+    #left empty rather than turned into the current folder, so it can be rejected
+    return os.path.abspath(text) if text else ''
 
 def parse_value(key, text):
     """Converts text typed on the CLI or in the REPL into a typed config value."""
@@ -112,6 +114,8 @@ def parse_value(key, text):
     return text
 
 def is_valid(key, value):
+    if key in CASE_SENSITIVE_KEYS:
+        return isinstance(value, str) and value.strip() != ''
     #compares types too, since True == 1 in Python
     if key not in VALID_OPTIONS:
         return True
@@ -179,7 +183,7 @@ def load_config():
         if k not in config:
             config[k] = v
 
-    for k in VALID_OPTIONS:
+    for k in defaults:
         if not is_valid(k, config[k]):
             print(f"\n[Warning] Invalid value '{format_value(config[k])}' for '{k}' in config.toml. "
                   f"Falling back to default ('{format_value(defaults[k])}').")
@@ -216,8 +220,11 @@ def reset_config(config, key=None):
 def validate_and_update(config, key, value):
     """Checks if the value is allowed before updating the config."""
     if not is_valid(key, value):
-        allowed = ', '.join(format_value(v) for v in VALID_OPTIONS[key])
-        print(f"\n[Error] Invalid value for '{key}'. Allowed options are: {allowed}")
+        if key in CASE_SENSITIVE_KEYS:
+            print(f"\n[Error] '{key}' needs a path.")
+        else:
+            allowed = ', '.join(format_value(v) for v in VALID_OPTIONS[key])
+            print(f"\n[Error] Invalid value for '{key}'. Allowed options are: {allowed}")
         return False
     if key == 'ffmpeg_path' and value != 'auto' and not (os.path.exists(value) or shutil.which(value)):
         print(f"\n[Error] No ffmpeg found at '{value}'. Give the path to ffmpeg, or 'auto' to have it found for you.")
