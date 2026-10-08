@@ -72,7 +72,7 @@ Run these directly from your shell for one-off, non-interactive downloads. Flags
 | `<URL>` | Downloads the given URL once, then exits. Search terms work too: `yt-fetch "daft punk one more time"` downloads the top YouTube result. |
 | `--batch [FILE]` | Downloads every link in `FILE` (default: `batch.txt` in the config folder), then exits. |
 | `--type {mp3,m4a,opus,flac,wav,mp4,mkv,webm}` | Overrides the output format. Audio: `mp3`, `m4a`, `opus`, `flac`, `wav`. Video: `mp4`, `mkv`, `webm`. |
-| `--quality {128,192,256,320}` | Overrides the audio bitrate (kbps). Not used for `flac` and `wav`, which are lossless. |
+| `--quality {128,192,256,320}` | Overrides the audio bitrate (kbps). Only used for `mp3` and `m4a`. |
 | `--resolution {480,720,1080,1440,2160,best}` | Overrides the maximum video height. |
 | `--metadata {true,false}` | Overrides whether metadata is embedded. |
 | `--allow-playlists {true,false}` | Overrides whether playlist URLs are expanded. |
@@ -88,7 +88,7 @@ Change these with `.config [key] [value]` in interactive mode, or edit `config.t
 | Key | Options | Default | Description |
 |---|---|---|---|
 | `type` | `mp3`, `m4a`, `opus`, `flac`, `wav`, `mp4`, `mkv`, `webm` | `mp3` | Output format. `mp4` prefers H.264 for compatibility, `mkv` takes the best quality in any codec, `webm` uses VP9 and Opus, and re-encodes (slowly) the rare video that doesn't come in those. |
-| `quality` | `128`, `192`, `256`, `320` | `192` | Audio bitrate in kbps. Not used for `flac` and `wav`. |
+| `quality` | `128`, `192`, `256`, `320` | `192` | Audio bitrate in kbps for `mp3` and `m4a`. Not used for `opus`, which is saved exactly as YouTube provides it, or for `flac` and `wav`. YouTube's own audio is around 130 kbps, so higher values and the lossless types give bigger files, not better sound. |
 | `resolution` | `480`, `720`, `1080`, `1440`, `2160`, `best` | `1080` | Maximum video height. |
 | `metadata` | `true`, `false` | `true` | Embeds the title, artist and cover art. Cover art isn't supported in `wav` and `webm`. |
 | `allow_playlists` | `true`, `false` | `false` | Downloads the whole playlist when a link points to one. When off, a video link that also names a playlist downloads just the video, and links to a playlist or channel itself are refused. |

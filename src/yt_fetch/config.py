@@ -70,7 +70,7 @@ VALID_OPTIONS = {
 #written next to each key when config.toml is first created, and shown by the REPL help command
 KEY_DESCRIPTIONS = {
     "type": "audio: mp3, m4a, opus, flac, wav | video: mp4, mkv, webm",
-    "quality": "audio bitrate in kbps: 128, 192, 256 or 320 (not used for flac/wav)",
+    "quality": "audio bitrate in kbps: 128, 192, 256 or 320 (only used for mp3/m4a)",
     "resolution": "max video height: 480, 720, 1080, 1440, 2160 or \"best\"",
     "metadata": "embed title, artist and thumbnail",
     "ffmpeg_path": "\"auto\" or a path to an ffmpeg executable",
