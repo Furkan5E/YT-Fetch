@@ -4,6 +4,7 @@ from .ffmpeg import get_ffmpeg_path
 from .lyrics import EmbedLyricsPP, PickLyricsTrackPP
 from .progress import QuietLogger, minimalist_progress_hook
 from .sponsors import TolerantSponsorBlockPP
+from .titles import DuplicateTitlePP
 
 
 #lossless formats have no bitrate, so 'quality' only applies to the others
@@ -102,7 +103,8 @@ def build_ydl_opts(config):
 
     #base options
     opts = {
-        'outtmpl': '%(title)s.%(ext)s',
+        #duplicate_suffix is empty unless DuplicateTitlePP sets it
+        'outtmpl': '%(title)s%(duplicate_suffix|)s.%(ext)s',
         #download_video adds a 'temp' folder that unfinished files are kept in
         'paths': {'home': out_dir},
         'ffmpeg_location': ffmpeg_path,
@@ -133,7 +135,7 @@ def build_extra_postprocessors(config):
     """Custom postprocessors, which yt-dlp only accepts via add_post_processor,
     as (postprocessor, when) pairs. Those in the same stage as
     opts['postprocessors'] run after them."""
-    extra = []
+    extra = [(DuplicateTitlePP(), 'after_filter')]
     if config.get('remove_sponsors', True):
         extra.append((TolerantSponsorBlockPP(None, categories=SPONSOR_CATEGORIES), 'after_filter'))
     if config.get('embed_lyrics', False) and config['type'] in AUDIO_TYPES:

@@ -6,6 +6,7 @@ from yt_fetch.downloader.lyrics import EmbedLyricsPP, PickLyricsTrackPP
 from yt_fetch.downloader.options import build_ydl_opts, build_extra_postprocessors
 from yt_fetch.downloader.progress import QuietLogger
 from yt_fetch.downloader.sponsors import TolerantSponsorBlockPP
+from yt_fetch.downloader.titles import DuplicateTitlePP
 
 
 @pytest.fixture(autouse=True)
@@ -85,20 +86,21 @@ def test_remove_sponsors_adds_sponsorblock_postprocessors(tmp_path):
     cfg = _config(tmp_path, remove_sponsors=True)
 
     keys = [pp["key"] for pp in build_ydl_opts(cfg)["postprocessors"]]
-    (pp, when), = build_extra_postprocessors(cfg)
 
     assert "ModifyChapters" in keys
     #the lookup is the tolerant one, so it isn't in the options yt-dlp builds itself
     assert "SponsorBlock" not in keys
-    assert isinstance(pp, TolerantSponsorBlockPP) and when == "after_filter"
+    assert _extra_postprocessors(cfg) == [(TolerantSponsorBlockPP, "after_filter")]
 
 
 #one track is picked before the subtitles are downloaded, then embedded at the end
 LYRICS_POSTPROCESSORS = [(PickLyricsTrackPP, "after_filter"), (EmbedLyricsPP, "post_process")]
 
 
-def _lyrics_postprocessors(extra):
-    return [(type(pp), when) for pp, when in extra]
+def _extra_postprocessors(cfg):
+    """The (type, stage) of each extra postprocessor, leaving out the one every download gets."""
+    return [(type(pp), when) for pp, when in build_extra_postprocessors(cfg)
+            if not isinstance(pp, DuplicateTitlePP)]
 
 
 def test_embed_lyrics_downloads_all_subtitle_languages(tmp_path):
@@ -114,24 +116,23 @@ def test_embed_lyrics_mp4_embeds_subtitle_tracks(tmp_path):
     keys = [pp["key"] for pp in build_ydl_opts(cfg)["postprocessors"]]
 
     assert "FFmpegEmbedSubtitle" in keys
-    assert build_extra_postprocessors(cfg) == []
+    assert _extra_postprocessors(cfg) == []
 
 
 def test_embed_lyrics_mp3_uses_lyrics_postprocessor(tmp_path):
     cfg = _config(tmp_path, type="mp3", embed_lyrics=True)
 
     keys = [pp["key"] for pp in build_ydl_opts(cfg)["postprocessors"]]
-    extra = build_extra_postprocessors(cfg)
 
     assert "FFmpegEmbedSubtitle" not in keys
-    assert _lyrics_postprocessors(extra) == LYRICS_POSTPROCESSORS
+    assert _extra_postprocessors(cfg) == LYRICS_POSTPROCESSORS
 
 
 def test_embed_lyrics_off_adds_nothing(tmp_path):
     cfg = _config(tmp_path, embed_lyrics=False)
 
     assert "writesubtitles" not in build_ydl_opts(cfg)
-    assert build_extra_postprocessors(cfg) == []
+    assert _extra_postprocessors(cfg) == []
 
 
 def test_audio_is_extracted_before_metadata_is_embedded(tmp_path):
@@ -153,7 +154,7 @@ def test_files_are_saved_to_the_output_dir_by_title(tmp_path):
     opts = build_ydl_opts(_config(tmp_path))
 
     #a relative template, since yt-dlp ignores 'paths' when it's absolute
-    assert opts["outtmpl"] == "%(title)s.%(ext)s"
+    assert opts["outtmpl"] == "%(title)s%(duplicate_suffix|)s.%(ext)s"
     assert opts["paths"] == {"home": str(tmp_path)}
 
 
@@ -239,9 +240,9 @@ def test_no_thumbnail_embedding_where_unsupported(tmp_path, media_type):
 
 @pytest.mark.parametrize("audio_type", ["m4a", "opus", "flac", "wav"])
 def test_embed_lyrics_uses_lyrics_postprocessor_for_all_audio(tmp_path, audio_type):
-    extra = build_extra_postprocessors(_config(tmp_path, type=audio_type, embed_lyrics=True))
+    cfg = _config(tmp_path, type=audio_type, embed_lyrics=True)
 
-    assert _lyrics_postprocessors(extra) == LYRICS_POSTPROCESSORS
+    assert _extra_postprocessors(cfg) == LYRICS_POSTPROCESSORS
 
 
 def test_non_links_are_searched_on_youtube(tmp_path):
@@ -259,3 +260,9 @@ def test_errors_do_not_stop_the_rest_of_a_playlist(tmp_path):
     #"only_download" rather than True: a video whose conversion failed is
     #dropped instead of being passed on to the next processing step
     assert build_ydl_opts(_config(tmp_path))["ignoreerrors"] == "only_download"
+
+
+def test_every_download_guards_against_duplicate_titles(tmp_path):
+    (pp, when), *_ = build_extra_postprocessors(_config(tmp_path))
+
+    assert isinstance(pp, DuplicateTitlePP) and when == "after_filter"
