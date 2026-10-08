@@ -11,9 +11,5 @@ wheels/
 
 *.exe
 
-# config
-config.txt
-batch.txt
-
 # Downloaded Media
 downloads/
