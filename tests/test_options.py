@@ -241,4 +241,6 @@ def test_warnings_reach_the_logger(tmp_path):
 
 
 def test_errors_do_not_stop_the_rest_of_a_playlist(tmp_path):
-    assert build_ydl_opts(_config(tmp_path))["ignoreerrors"] is True
+    #"only_download" rather than True: a video whose conversion failed is
+    #dropped instead of being passed on to the next processing step
+    assert build_ydl_opts(_config(tmp_path))["ignoreerrors"] == "only_download"

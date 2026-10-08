@@ -109,8 +109,9 @@ def build_ydl_opts(config):
         'progress_hooks': [minimalist_progress_hook],
         'noplaylist': not config.get('allow_playlists', False),
         #one video that can't be downloaded doesn't stop the rest of a playlist;
-        #errors go to the logger instead of being raised
-        'ignoreerrors': True,
+        #errors go to the logger instead of being raised. Not True, which would
+        #also run a video's remaining processing steps after one of them failed
+        'ignoreerrors': 'only_download',
         #anything that isn't a URL is searched on YouTube and the top result downloaded
         'default_search': 'ytsearch',
         'postprocessors': []
