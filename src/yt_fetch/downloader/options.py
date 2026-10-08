@@ -47,8 +47,11 @@ def _add_video_format_opts(opts, config):
 
     if video_type == 'webm':
         #webm can only hold VP9/AV1 video and Opus/Vorbis audio, which YouTube serves as webm
-        opts['format'] = f'bv*[ext=webm]{height}+ba[ext=webm]/b[ext=webm]{height}'
+        opts['format'] = f'bv*[ext=webm]{height}+ba[ext=webm]/b[ext=webm]{height}/bv*{height}+ba/b{height}'
         opts['format_sort'] = ['res', 'fps']
+        #only does anything when the fallback after the last '/' was needed: a
+        #video with no webm streams is re-encoded, which is slow but works
+        opts['postprocessors'].append({'key': 'FFmpegVideoConvertor', 'preferedformat': 'webm'})
     else:
         #any codec is allowed so high resolutions that YouTube only serves as
         #VP9/AV1 aren't skipped
@@ -61,7 +64,8 @@ def _add_video_format_opts(opts, config):
             opts['format_sort'] = ['res', 'fps']
         opts['postprocessors'].append({'key': 'FFmpegVideoRemuxer', 'preferedformat': video_type})
 
-    opts['merge_output_format'] = video_type
+    #webm falls back to mkv for streams it can't hold, which are then converted
+    opts['merge_output_format'] = 'webm/mkv' if video_type == 'webm' else video_type
 
 def _add_audio_format_opts(opts, config):
     audio_type = config['type']

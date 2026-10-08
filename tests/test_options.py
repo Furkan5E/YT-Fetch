@@ -199,11 +199,26 @@ def test_mkv_takes_best_quality_and_remuxes_to_mkv(tmp_path):
     assert {"key": "FFmpegVideoRemuxer", "preferedformat": "mkv"} in opts["postprocessors"]
 
 
-def test_webm_only_picks_webm_streams(tmp_path):
+def test_webm_prefers_webm_streams(tmp_path):
     opts = build_ydl_opts(_config(tmp_path, type="webm", resolution=720))
 
-    assert opts["format"] == "bv*[ext=webm][height<=720]+ba[ext=webm]/b[ext=webm][height<=720]"
-    assert opts["merge_output_format"] == "webm"
+    assert opts["format"].startswith("bv*[ext=webm][height<=720]+ba[ext=webm]/b[ext=webm][height<=720]/")
+
+
+def test_webm_converts_videos_that_have_no_webm_streams(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path, type="webm", resolution=720))
+
+    #any streams as a last resort, merged into mkv (webm can't hold them), then converted
+    assert opts["format"].endswith("/bv*[height<=720]+ba/b[height<=720]")
+    assert opts["merge_output_format"] == "webm/mkv"
+    assert {"key": "FFmpegVideoConvertor", "preferedformat": "webm"} in opts["postprocessors"]
+
+
+@pytest.mark.parametrize("video_type", ["mp4", "mkv"])
+def test_other_video_types_are_never_re_encoded(tmp_path, video_type):
+    opts = build_ydl_opts(_config(tmp_path, type=video_type))
+
+    assert "FFmpegVideoConvertor" not in [pp["key"] for pp in opts["postprocessors"]]
 
 
 def test_webm_subtitles_are_converted_to_webvtt(tmp_path):

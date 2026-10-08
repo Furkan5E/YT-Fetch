@@ -87,7 +87,7 @@ Change these with `.config [key] [value]` in interactive mode, or edit `config.t
 
 | Key | Options | Default | Description |
 |---|---|---|---|
-| `type` | `mp3`, `m4a`, `opus`, `flac`, `wav`, `mp4`, `mkv`, `webm` | `mp3` | Output format. `mp4` prefers H.264 for compatibility, `mkv` takes the best quality in any codec, `webm` uses VP9 and Opus. |
+| `type` | `mp3`, `m4a`, `opus`, `flac`, `wav`, `mp4`, `mkv`, `webm` | `mp3` | Output format. `mp4` prefers H.264 for compatibility, `mkv` takes the best quality in any codec, `webm` uses VP9 and Opus, and re-encodes (slowly) the rare video that doesn't come in those. |
 | `quality` | `128`, `192`, `256`, `320` | `192` | Audio bitrate in kbps. Not used for `flac` and `wav`. |
 | `resolution` | `480`, `720`, `1080`, `1440`, `2160`, `best` | `1080` | Maximum video height. |
 | `metadata` | `true`, `false` | `true` | Embeds the title, artist and cover art. Cover art isn't supported in `wav` and `webm`. |
