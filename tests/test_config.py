@@ -261,12 +261,19 @@ def test_default_output_dir_is_in_user_downloads(isolated_config, tmp_path, monk
     assert cfg["output_dir"] == os.path.join(str(tmp_path), "Downloads", "yt-fetch")
 
 
-def test_default_output_dir_env_var_takes_priority(isolated_config, tmp_path, monkeypatch):
+def test_output_dir_env_var_is_not_saved_as_the_setting(isolated_config, tmp_path, monkeypatch):
     monkeypatch.setenv("YT_FETCH_OUTPUT_DIR", str(tmp_path / "mounted"))
 
     cfg = config.load_config()
 
-    assert cfg["output_dir"] == str(tmp_path / "mounted")
+    assert cfg["output_dir"] == config.get_default_output_dir()
+    assert config.get_env_output_dir() == str(tmp_path / "mounted")
+
+
+def test_output_dir_env_var_unset_or_empty_is_ignored(monkeypatch):
+    assert config.get_env_output_dir() == ""
+    monkeypatch.setenv("YT_FETCH_OUTPUT_DIR", "  ")
+    assert config.get_env_output_dir() == ""
 
 
 def test_load_config_accepts_a_bom(isolated_config):

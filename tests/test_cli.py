@@ -157,3 +157,21 @@ def test_empty_output_dir_flag_is_rejected(monkeypatch, isolated_config, capsys,
 
     assert exit_info.value.code == 2
     assert "--output-dir needs a folder" in capsys.readouterr().err
+
+
+def test_output_dir_env_var_overrides_a_config_made_before_it_was_set(monkeypatch, tmp_path):
+    monkeypatch.setenv("YT_FETCH_OUTPUT_DIR", str(tmp_path / "mounted"))
+    saved = {"type": "mp3", "output_dir": str(tmp_path / "saved")}
+
+    result = cli.apply_overrides(saved, _args())
+
+    assert result["output_dir"] == str(tmp_path / "mounted")
+    assert saved["output_dir"] == str(tmp_path / "saved")  #config.toml's value is untouched
+
+
+def test_output_dir_flag_beats_the_env_var(monkeypatch, tmp_path):
+    monkeypatch.setenv("YT_FETCH_OUTPUT_DIR", str(tmp_path / "mounted"))
+
+    result = cli.apply_overrides({}, _args(output_dir=str(tmp_path / "flag")))
+
+    assert result["output_dir"] == str(tmp_path / "flag")

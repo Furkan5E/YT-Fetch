@@ -95,7 +95,7 @@ Change these with `.config [key] [value]` in interactive mode, or edit `config.t
 | `remove_sponsors` | `true`, `false` | `true` | Cuts sponsor, interaction reminder, intro and outro segments using SponsorBlock. |
 | `embed_lyrics` | `true`, `false` | `false` | Embeds the video's hand-written captions: as lyrics in audio files, or as subtitle tracks in video files. Only works when the video has captions. |
 | `ffmpeg_path` | `auto` or a path | `auto` | Where to find FFmpeg. `auto` searches as described in [Prerequisites](#prerequisites). |
-| `output_dir` | a folder | `~/Downloads/yt-fetch` | Where downloads are saved. `~` and environment variables like `%USERPROFILE%` are expanded, and relative paths are resolved from the current folder. The `YT_FETCH_OUTPUT_DIR` environment variable changes the default. |
+| `output_dir` | a folder | `~/Downloads/yt-fetch` | Where downloads are saved. `~` and environment variables like `%USERPROFILE%` are expanded, and relative paths are resolved from the current folder. The `YT_FETCH_OUTPUT_DIR` environment variable, when set, is used instead of this setting. |
 
 ---
 
@@ -116,7 +116,7 @@ To download a batch file, put it in `./downloads` and pass it with `--batch`:
 ```bash
 docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config ghcr.io/furkan5e/yt-fetch:latest --batch /downloads/batch.txt
 ```
-Don't change `output_dir` inside the container: downloads are only saved to your machine while they go to `/downloads`.
+The image sets `YT_FETCH_OUTPUT_DIR` to `/downloads`, so downloads land in the mounted folder whatever `output_dir` says.
 
 ---
 

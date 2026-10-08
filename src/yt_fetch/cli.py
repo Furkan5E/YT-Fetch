@@ -63,12 +63,17 @@ def parse_args():
     return args
 
 def apply_overrides(current_config, args):
-    """Returns a copy of current_config with any passed CLI flags applied
-    on top. The underlying config.toml is never touched by this."""
-    overrides = {
+    """Returns a copy of current_config with YT_FETCH_OUTPUT_DIR and any
+    passed CLI flags applied on top, flags last. The underlying config.toml
+    is never touched by this."""
+    overrides = {}
+    env_output_dir = config.get_env_output_dir()
+    if env_output_dir:
+        overrides["output_dir"] = env_output_dir
+    overrides.update({
         key: config.parse_value(key, getattr(args, key))
         for key in OVERRIDABLE_KEYS if getattr(args, key) is not None
-    }
+    })
     if args.output_dir is not None:
         overrides["output_dir"] = config.parse_value("output_dir", args.output_dir)
     return {**current_config, **overrides} if overrides else current_config
