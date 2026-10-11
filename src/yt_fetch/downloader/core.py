@@ -8,6 +8,7 @@ import yt_dlp
 
 from .ffmpeg import FFmpegNotFoundError
 from .options import build_ydl_opts, build_extra_postprocessors
+from .progress import format_duration
 
 
 _BARE_URL = re.compile(r'^[\w-]+(\.[\w-]+)+/')
@@ -53,16 +54,11 @@ def _print_playlist_refused(info):
     print(f"\n[Error] That link is {name}, and allow_playlists is off.")
     print("        Turn it on with `.config allow_playlists true` or `--allow-playlists true`.")
 
-def _format_duration(seconds):
-    minutes, seconds = divmod(int(seconds), 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{hours}:{minutes:02}:{seconds:02}" if hours else f"{minutes}:{seconds:02}"
-
 def _describe(result):
     """A search result as 'Title (3:45) by Channel', with whatever is known."""
     text = result.get('title') or result.get('url') or 'Unknown video'
     if result.get('duration'):
-        text += f" ({_format_duration(result['duration'])})"
+        text += f" ({format_duration(result['duration'])})"
     channel = result.get('channel') or result.get('uploader')
     if channel:
         text += f" by {channel}"

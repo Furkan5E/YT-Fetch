@@ -2,7 +2,7 @@ import os
 
 from .ffmpeg import get_ffmpeg_path
 from .lyrics import EmbedLyricsPP, PickLyricsTrackPP
-from .progress import QuietLogger, minimalist_progress_hook
+from .progress import QuietLogger, progress_hook
 from .sponsors import TolerantSponsorBlockPP
 from .titles import DuplicateTitlePP
 
@@ -112,7 +112,7 @@ def build_ydl_opts(config):
         'no_warnings': False,
         'noprogress': True,
         'logger': QuietLogger(),
-        'progress_hooks': [minimalist_progress_hook],
+        'progress_hooks': [progress_hook],
         'noplaylist': not config.get('allow_playlists', False),
         #one video that can't be downloaded doesn't stop the rest of a playlist;
         #errors go to the logger instead of being raised. Not True, which would

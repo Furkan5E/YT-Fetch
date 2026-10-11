@@ -37,7 +37,8 @@ def run_batch(batch_file, current_config):
     succeeded = 0
     failed_links = []
     try:
-        for link in links:
+        for number, link in enumerate(links, start=1):
+            print(f"\nLink {number} of {len(links)}")
             if downloader.download_video(link, current_config):
                 succeeded += 1
             else:

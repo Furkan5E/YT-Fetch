@@ -95,3 +95,16 @@ def test_default_batch_file_is_created_along_with_its_folder(tmp_path, monkeypat
     assert batch.run_batch(config.get_batch_file(), {}) is False
 
     assert (folder / "batch.txt").is_file()
+
+
+def test_each_link_is_numbered(tmp_path, monkeypatch, capsys):
+    batch_file = tmp_path / "batch.txt"
+    batch_file.write_text("link1\nlink2\nlink3\n")
+    monkeypatch.setattr(batch.downloader, "download_video", lambda link, config: True)
+
+    batch.run_batch(str(batch_file), {})
+
+    out = capsys.readouterr().out
+    assert [line for line in out.splitlines() if line.startswith("Link ")] == [
+        "Link 1 of 3", "Link 2 of 3", "Link 3 of 3",
+    ]
