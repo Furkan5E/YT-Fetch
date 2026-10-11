@@ -13,6 +13,21 @@ from .progress import format_duration
 
 _BARE_URL = re.compile(r'^[\w-]+(\.[\w-]+)+/')
 
+#a download that fails with one of these is worth trying again from the
+#start: fresh links from YouTube usually get past a 403, and the rest pass
+#with time. Errors like "Video unavailable" would only fail the same way
+MAX_ATTEMPTS = 3
+RETRY_DELAY = 3
+TRANSIENT_ERRORS = (
+    'http error 403', 'http error 5', 'timed out', 'timeout', 'connection',
+    'temporary failure', 'getaddrinfo', 'incompleteread', 'unable to download video data',
+)
+#returned by an attempt that failed in a way worth retrying
+_RETRY = object()
+
+def _is_transient(errors):
+    return any(marker in error.lower() for error in errors for marker in TRANSIENT_ERRORS)
+
 def _remove_temp_dir(temp_dir, report, attempts=5):
     """Deletes the folder holding a download's unfinished files (.part files,
     temp files, thumbnails, subtitles, half-processed output). Nothing else in
@@ -73,9 +88,30 @@ def _print_saved(completed):
 
 def download_video(video_url, config, confirm_search=None):
     """Executes the download process. Returns True on success, False on failure.
-    Ctrl+C is reported and re-raised so callers can decide what it cancels.
-    confirm_search, if given, is called once a search has found a video and
-    returns whether to download it."""
+    A download that fails with a temporary error is tried again, up to
+    MAX_ATTEMPTS times in all. Ctrl+C is reported and re-raised so callers can
+    decide what it cancels. confirm_search, if given, is called once a search
+    has found a video and returns whether to download it."""
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        result = _attempt(video_url, config, confirm_search)
+        if result is not _RETRY:
+            return result
+        if attempt == MAX_ATTEMPTS:
+            break
+        delay = RETRY_DELAY * attempt
+        print(f"\nThat looks temporary. Trying again in {delay} seconds (attempt {attempt + 1} of {MAX_ATTEMPTS})...")
+        try:
+            time.sleep(delay)
+        except KeyboardInterrupt:
+            print("\nDownload cancelled.")
+            raise
+        #a search result that was confirmed once isn't asked about again
+        confirm_search = None
+    return False
+
+def _attempt(video_url, config, confirm_search):
+    """One try at the download: True, False, or _RETRY if it failed in a way
+    that's worth another try."""
     try:
         ydl_opts = build_ydl_opts(config)
     except FFmpegNotFoundError as e:
@@ -155,6 +191,9 @@ def _download(video_url, config, ydl_opts, confirm_search=None):
                 print(f"\n[Error] No results for: {video_url}")
             else:
                 print("\n[Error] Nothing to download from that link.")
+        #only when nothing was saved, so finished playlist items aren't downloaded again
+        elif _is_transient(logger.errors):
+            return _RETRY
         return False
     if logger.errors:
         #e.g. a playlist with a private video in it

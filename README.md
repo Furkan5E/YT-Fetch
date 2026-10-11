@@ -64,6 +64,8 @@ Run `yt-fetch` with no arguments to start interactive mode.
 
 Pressing Ctrl+C during a download cancels it and removes its partial files, then returns you to the prompt. Pressing Ctrl+C at the prompt exits.
 
+A download that fails with a temporary error, such as a dropped connection or YouTube refusing the request, is tried again automatically, up to three attempts in all.
+
 ## CLI Flags
 Run these directly from your shell for one-off, non-interactive downloads. Flags override `config.toml` for that run only; the saved config is never touched.
 

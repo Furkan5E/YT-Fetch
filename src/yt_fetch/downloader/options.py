@@ -90,6 +90,11 @@ def _add_metadata_opts(opts, config):
             opts['writethumbnail'] = True
             opts['postprocessors'].append({'key': 'EmbedThumbnail'})
 
+def _retry_delay(n):
+    """Seconds to wait before one of yt-dlp's retries: 1, 2, 4... up to 20.
+    yt-dlp passes n by name, counting from 0."""
+    return min(2 ** n, 20)
+
 def get_output_dir(config):
     return config.get('output_dir', os.path.join(os.getcwd(), 'downloads'))
 
@@ -114,6 +119,11 @@ def build_ydl_opts(config):
         'logger': QuietLogger(),
         'progress_hooks': [progress_hook],
         'noplaylist': not config.get('allow_playlists', False),
+        #yt-dlp's own retries, for connections that drop partway through; a
+        #download that still fails is tried again as a whole by download_video
+        'retries': 10,
+        'fragment_retries': 10,
+        'retry_sleep_functions': {'http': _retry_delay, 'fragment': _retry_delay},
         #one video that can't be downloaded doesn't stop the rest of a playlist;
         #errors go to the logger instead of being raised. Not True, which would
         #also run a video's remaining processing steps after one of them failed

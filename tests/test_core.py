@@ -72,6 +72,7 @@ def fake_ydl(monkeypatch, tmp_path):
                         lambda config: {"paths": {"home": str(tmp_path)}, "logger": QuietLogger()})
     monkeypatch.setattr(core, "build_extra_postprocessors", lambda config: [])
     monkeypatch.setattr(core.yt_dlp, "YoutubeDL", _FakeYDL)
+    monkeypatch.setattr(core.time, "sleep", lambda seconds: None)
     #unless a test says otherwise, every download saves one file
     _FakeYDL.action = lambda ydl: ydl.finish(tmp_path / "Song.mp3")
     yield _FakeYDL
@@ -410,3 +411,130 @@ def test_failed_extraction_is_not_processed(fake_ydl):
     assert core.download_video("https://example.com/v", {}) is False
 
     assert "download" not in fake_ydl.calls
+
+
+FORBIDDEN = "ERROR: unable to download video data: HTTP Error 403: Forbidden"
+
+
+def _fail_times(fake_ydl, tmp_path, times, error=FORBIDDEN):
+    """Makes the first `times` downloads report `error`; later ones save a file."""
+    downloads = []
+
+    def action(ydl):
+        downloads.append(1)
+        if len(downloads) <= times:
+            ydl.opts["logger"].error(error)
+        else:
+            ydl.finish(tmp_path / "Song.mp3")
+    fake_ydl.action = action
+    return downloads
+
+
+def test_temporary_failure_is_retried_until_it_works(fake_ydl, tmp_path, capsys):
+    downloads = _fail_times(fake_ydl, tmp_path, times=2)
+
+    assert core.download_video("https://example.com/v", {}) is True
+
+    assert len(downloads) == 3
+    out = capsys.readouterr().out
+    assert "Trying again in 3 seconds (attempt 2 of 3)" in out
+    assert "Trying again in 6 seconds (attempt 3 of 3)" in out
+    assert "Successfully downloaded!" in out
+
+
+def test_gives_up_after_the_last_attempt(fake_ydl, tmp_path, capsys):
+    downloads = _fail_times(fake_ydl, tmp_path, times=99)
+
+    assert core.download_video("https://example.com/v", {}) is False
+
+    assert len(downloads) == core.MAX_ATTEMPTS
+    assert "attempt 4" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("error", [
+    "ERROR: [youtube] abc: Video unavailable",
+    "ERROR: [youtube] abc: Private video. Sign in if you've been granted access to this video",
+    "ERROR: [youtube] abc: Requested format is not available",
+])
+def test_permanent_failures_are_not_retried(fake_ydl, tmp_path, error):
+    downloads = _fail_times(fake_ydl, tmp_path, times=99, error=error)
+
+    assert core.download_video("https://example.com/v", {}) is False
+
+    assert len(downloads) == 1
+
+
+@pytest.mark.parametrize("error", [
+    "ERROR: unable to download video data: HTTP Error 503: Service Unavailable",
+    "ERROR: [youtube] abc: Unable to download webpage: The read operation timed out",
+    "ERROR: Unable to download API page: [Errno 11001] getaddrinfo failed",
+    "ERROR: [download] Got error: Connection reset by peer",
+])
+def test_network_errors_count_as_temporary(fake_ydl, tmp_path, error):
+    downloads = _fail_times(fake_ydl, tmp_path, times=1, error=error)
+
+    assert core.download_video("https://example.com/v", {}) is True
+
+    assert len(downloads) == 2
+
+
+def test_playlist_that_saved_something_is_not_started_over(fake_ydl, tmp_path):
+    downloads = []
+
+    def action(ydl):
+        downloads.append(1)
+        ydl.finish(tmp_path / "one.mp3")
+        ydl.opts["logger"].error(FORBIDDEN)
+    fake_ydl.action = action
+
+    assert core.download_video(PLAYLIST_URL, {"allow_playlists": True}) is False
+
+    assert len(downloads) == 1
+
+
+def test_each_attempt_cleans_up_after_itself(fake_ydl, tmp_path):
+    temp_dirs = []
+
+    def action(ydl):
+        temp_dirs.append(ydl.opts["paths"]["temp"])
+        ydl.opts["logger"].error(FORBIDDEN)
+    fake_ydl.action = action
+
+    core.download_video("https://example.com/v", {})
+
+    assert len(set(temp_dirs)) == core.MAX_ATTEMPTS
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_retried_search_is_only_confirmed_once(fake_ydl, tmp_path):
+    _fail_times(fake_ydl, tmp_path, times=1)
+    asked = []
+
+    def confirm():
+        asked.append(1)
+        return True
+
+    assert core.download_video("daft punk", {}, confirm_search=confirm) is True
+
+    assert len(asked) == 1
+
+
+def test_declined_search_is_not_retried(fake_ydl, tmp_path):
+    downloads = _fail_times(fake_ydl, tmp_path, times=0)
+
+    assert core.download_video("daft punk", {}, confirm_search=lambda: False) is False
+
+    assert downloads == []
+
+
+def test_ctrl_c_while_waiting_to_retry_is_reported(fake_ydl, tmp_path, monkeypatch, capsys):
+    _fail_times(fake_ydl, tmp_path, times=99)
+
+    def interrupted(seconds):
+        raise KeyboardInterrupt
+    monkeypatch.setattr(core.time, "sleep", interrupted)
+
+    with pytest.raises(KeyboardInterrupt):
+        core.download_video("https://example.com/v", {})
+
+    assert "Download cancelled." in capsys.readouterr().out

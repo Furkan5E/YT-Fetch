@@ -266,3 +266,12 @@ def test_every_download_guards_against_duplicate_titles(tmp_path):
     (pp, when), *_ = build_extra_postprocessors(_config(tmp_path))
 
     assert isinstance(pp, DuplicateTitlePP) and when == "after_filter"
+
+
+def test_dropped_connections_are_retried_with_a_growing_wait(tmp_path):
+    opts = build_ydl_opts(_config(tmp_path))
+
+    assert opts["retries"] == 10 and opts["fragment_retries"] == 10
+    wait = opts["retry_sleep_functions"]["http"]
+    #called the way yt-dlp does: by name, counting from 0
+    assert [wait(n=n) for n in (0, 1, 2, 3, 9)] == [1, 2, 4, 8, 20]
