@@ -184,3 +184,55 @@ def test_failed_reset_is_not_announced(isolated_config, monkeypatch, capsys):
 
     assert "All settings reset" not in capsys.readouterr().out
     assert current_config["quality"] == 320
+
+
+@pytest.fixture
+def pinned_session(isolated_config, tmp_path, monkeypatch):
+    """A session like the Docker image's: YT_FETCH_OUTPUT_DIR points at the mounted folder."""
+    mounted = str(tmp_path / "mounted")
+    monkeypatch.setenv("YT_FETCH_OUTPUT_DIR", mounted)
+    saved_config = config.load_config()
+    return {**saved_config, "output_dir": mounted}, saved_config, mounted
+
+
+def test_setting_output_dir_does_not_move_a_session_pinned_by_the_env_var(pinned_session, tmp_path, capsys):
+    current_config, saved_config, mounted = pinned_session
+    elsewhere = str(tmp_path / "elsewhere")
+
+    handle_config_command([".config", "output_dir", elsewhere], current_config, saved_config)
+
+    assert current_config["output_dir"] == mounted
+    assert config.load_config()["output_dir"] == elsewhere
+    out = capsys.readouterr().out
+    assert f"output_dir is saved as {elsewhere}, but downloads still go to {mounted}" in out
+    assert "YT_FETCH_OUTPUT_DIR is set" in out
+
+
+@pytest.mark.parametrize("command", [[".config", "reset"], [".config", "reset", "output_dir"]])
+def test_reset_does_not_move_a_session_pinned_by_the_env_var(pinned_session, capsys, command):
+    current_config, saved_config, mounted = pinned_session
+
+    handle_config_command(command, current_config, saved_config)
+
+    assert current_config["output_dir"] == mounted
+    assert f"Downloads still go to {mounted}" in capsys.readouterr().out
+
+
+def test_other_settings_still_apply_in_a_pinned_session(pinned_session):
+    current_config, saved_config, mounted = pinned_session
+
+    handle_config_command([".config", "type", "flac"], current_config, saved_config)
+
+    assert current_config["type"] == "flac"
+    assert current_config["output_dir"] == mounted
+
+
+def test_output_dir_applies_to_the_session_without_the_env_var(isolated_config, tmp_path, capsys):
+    saved_config = config.load_config()
+    current_config = dict(saved_config)
+    elsewhere = str(tmp_path / "elsewhere")
+
+    handle_config_command([".config", "output_dir", elsewhere], current_config, saved_config)
+
+    assert current_config["output_dir"] == elsewhere
+    assert f"output_dir is set to {elsewhere}" in capsys.readouterr().out

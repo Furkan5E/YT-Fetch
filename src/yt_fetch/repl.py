@@ -3,6 +3,12 @@ from . import downloader
 from .batch import run_batch
 
 
+def _output_dir_is_pinned(key):
+    """True when YT_FETCH_OUTPUT_DIR decides where downloads go. A saved
+    output_dir must not move this session away from it: in Docker that's the
+    one folder mounted from the host, and files saved anywhere else are lost."""
+    return key == 'output_dir' and bool(config.get_env_output_dir())
+
 def handle_config_command(parts, current_config, saved_config):
     """Parses and executes .config commands. Updates are written to
     saved_config (config.toml) so CLI overrides in current_config never get saved."""
@@ -17,11 +23,14 @@ def handle_config_command(parts, current_config, saved_config):
         if not reset_keys:
             return
         for k in reset_keys:
-            current_config[k] = saved_config[k]
+            if not _output_dir_is_pinned(k):
+                current_config[k] = saved_config[k]
         if key is None:
             print("All settings reset to defaults.")
         else:
             print(f"{key} reset to {config.format_value(saved_config[key])}")
+        if any(_output_dir_is_pinned(k) for k in reset_keys):
+            print(f"Downloads still go to {current_config['output_dir']}, because YT_FETCH_OUTPUT_DIR is set.")
 
     #case 1: ".config" -> print entire config
     elif len(parts) == 1:
@@ -45,7 +54,10 @@ def handle_config_command(parts, current_config, saved_config):
 
         if key in current_config:
             success = config.validate_and_update(saved_config, key, value)
-            if success:
+            if success and _output_dir_is_pinned(key):
+                print(f"output_dir is saved as {value}, but downloads still go to "
+                      f"{current_config['output_dir']}, because YT_FETCH_OUTPUT_DIR is set.")
+            elif success:
                 current_config[key] = value
                 if key == "quality":
                     print(f"quality is set to {value}kbps")
