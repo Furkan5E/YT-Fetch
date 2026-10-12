@@ -8,10 +8,12 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        #the app has Windows-only paths (APPDATA, ffmpeg.exe), so both are tested
+        os: [ubuntu-latest, windows-latest]
         python-version: ['3.11', '3.12', '3.13', '3.14']
     env:
       #uv otherwise follows .python-version and ignores the matrix
