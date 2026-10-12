@@ -13,7 +13,7 @@ An interactive command line application for downloading audio and video from You
 
 Download as mp3, m4a, opus, flac or wav audio, or mp4, mkv or webm video up to 4K. Paste a link or just type what you're looking for, embed lyrics and cover art, cut out sponsor segments with SponsorBlock, and download whole lists of links in one go.
 
-[![Download Latest Release](https://img.shields.io/github/v/release/Furkan5E/YT-Fetch?style=for-the-badge&label=DOWNLOAD%20.WHL&color=success)](https://github.com/Furkan5E/YT-Fetch/releases/latest)
+[![Download Latest Release](https://img.shields.io/github/v/release/Furkan5E/YT-Fetch?style=for-the-badge&label=DOWNLOAD%20.WHL&color=success&logo=github)](https://github.com/Furkan5E/YT-Fetch/releases/latest)
 
 ```bash
 yt-fetch                                        # interactive mode
@@ -146,6 +146,8 @@ To download a batch file, put it in `./downloads` and pass it with `--batch`:
 docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config ghcr.io/furkan5e/yt-fetch:latest --batch /downloads/batch.txt
 ```
 The image sets `YT_FETCH_OUTPUT_DIR` to `/downloads`, so downloads land in the mounted folder whatever `output_dir` says.
+
+On Linux, downloads are owned by root unless you start the container as yourself by adding `--user "$(id -u):$(id -g)"` after `--rm`.
 
 These commands work as written in PowerShell and bash. In `cmd`, write `%cd%` instead of `${PWD}`.
 
