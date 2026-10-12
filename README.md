@@ -9,11 +9,17 @@
 [![Build Docker](https://github.com/Furkan5E/YT-Fetch/actions/workflows/build-docker.yaml/badge.svg)](https://github.com/Furkan5E/YT-Fetch/actions/workflows/build-docker.yaml)
 [![Tests](https://github.com/Furkan5E/YT-Fetch/actions/workflows/test.yaml/badge.svg)](https://github.com/Furkan5E/YT-Fetch/actions/workflows/test.yaml)
 
-A modular, interactive command line application for downloading audio and video from YouTube. Powered by `yt-dlp` and `FFmpeg`.
+An interactive command line application for downloading audio and video from YouTube. Powered by `yt-dlp` and `FFmpeg`.
 
 Download as mp3, m4a, opus, flac or wav audio, or mp4, mkv or webm video up to 4K. Paste a link or just type what you're looking for, embed lyrics and cover art, cut out sponsor segments with SponsorBlock, and download whole lists of links in one go.
 
 [![Download Latest Release](https://img.shields.io/github/v/release/Furkan5E/YT-Fetch?style=for-the-badge&label=DOWNLOAD%20.WHL&color=success)](https://github.com/Furkan5E/YT-Fetch/releases/latest)
+
+```bash
+yt-fetch                                        # interactive mode
+yt-fetch "https://youtu.be/..." --type mp4      # download one link, then exit
+yt-fetch "daft punk one more time"              # search and download the top result
+```
 
 ---
 
@@ -21,12 +27,16 @@ Download as mp3, m4a, opus, flac or wav audio, or mp4, mkv or webm video up to 4
 * **Python 3.11+**
 * **uv**: used to install and run the app.
 * **Deno**: installed automatically with the other dependencies. yt-dlp uses it to solve YouTube's JavaScript challenges, without which some formats can be missing.
-* **FFmpeg** (optional): used for media processing and metadata embedding. YT Fetch looks for it at `ffmpeg_path` in `config.toml`, then in the yt-fetch config folder (run `yt-fetch --config-path` to see where that is), then on your system `PATH`. If it's in none of those, a static build is downloaded automatically on first run.
+* **FFmpeg** (optional): used for media processing and metadata embedding. YT Fetch looks for it in this order:
+  1. `ffmpeg_path` in `config.toml`
+  2. the yt-fetch config folder (run `yt-fetch --config-path` to see where that is)
+  3. your system `PATH`
+  4. if it's in none of those, a static build is downloaded automatically on first run
 
 ## Installation
-Install the `.whl` from the [latest release](https://github.com/Furkan5E/YT-Fetch/releases/latest) as a command you can run from anywhere:
+Download the `.whl` from the [latest release](https://github.com/Furkan5E/YT-Fetch/releases/latest) and install it as a command you can run from anywhere, using the name of the file you downloaded:
 ```bash
-uv tool install yt_fetch-2.0.0-py3-none-any.whl
+uv tool install yt_fetch-X.Y.Z-py3-none-any.whl
 yt-fetch
 ```
 Or install it straight from GitHub:
@@ -35,16 +45,13 @@ uv tool install git+https://github.com/Furkan5E/YT-Fetch
 ```
 To run it from a clone of the repository instead:
 ```bash
-git clone https://github.com/Furkan5E/yt-fetch
-cd yt-fetch
+git clone https://github.com/Furkan5E/YT-Fetch
+cd YT-Fetch
 uv sync
 uv run yt-fetch
 ```
 
 Settings are saved to `config.toml` in your user config folder (`%APPDATA%\yt-fetch` on Windows, `~/Library/Application Support/yt-fetch` on macOS, `~/.config/yt-fetch` on Linux). `batch.txt` lives in the same folder. Downloads go to `~/Downloads/yt-fetch` by default.
-
-### Upgrading from 1.x
-Version 2.0 stores settings in `config.toml` in the folder above, instead of `config.txt` next to the app. Settings from 1.x aren't carried over, so set them again with `.config` or by editing `config.toml`.
 
 ---
 
@@ -67,7 +74,7 @@ Pressing Ctrl+C during a download cancels it and removes its partial files, then
 A download that fails with a temporary error, such as a dropped connection or YouTube refusing the request, is tried again automatically, up to three attempts in all.
 
 ## CLI Flags
-Run these directly from your shell for one-off, non-interactive downloads. Flags override `config.toml` for that run only; the saved config is never touched.
+Pass a link (or `--batch`) to download without the prompt and exit. The other flags override `config.toml` for that run only, and the saved config is never touched. They work in interactive mode too: `yt-fetch --type mp4` opens the prompt with `type` set to `mp4` for that session.
 
 | Flag | Description |
 |---|---|
@@ -84,20 +91,40 @@ Run these directly from your shell for one-off, non-interactive downloads. Flags
 | `--config-path` | Prints the location of `config.toml`, then exits. |
 | `--version` | Prints the installed version, then exits. |
 
+For scripts, the exit code says how a non-interactive run ended:
+
+| Exit code | Meaning |
+|---|---|
+| `0` | Everything was downloaded. |
+| `1` | Something failed, or nothing was found. |
+| `2` | The arguments weren't valid. |
+| `130` | Cancelled with Ctrl+C. |
+
 ## Settings
 Change these with `.config [key] [value]` in interactive mode, or edit `config.toml` by hand. Each setting in the file has a comment listing its options, and your own comments are kept when the app saves changes.
 
 | Key | Options | Default | Description |
 |---|---|---|---|
-| `type` | `mp3`, `m4a`, `opus`, `flac`, `wav`, `mp4`, `mkv`, `webm` | `mp3` | Output format. `mp4` prefers H.264 for compatibility, `mkv` takes the best quality in any codec, `webm` uses VP9 and Opus, and re-encodes (slowly) the rare video that doesn't come in those. |
-| `quality` | `128`, `192`, `256`, `320` | `192` | Audio bitrate in kbps for `mp3` and `m4a`. Not used for `opus`, which is saved exactly as YouTube provides it, or for `flac` and `wav`. YouTube's own audio is around 130 kbps, so higher values and the lossless types give bigger files, not better sound. |
+| `type` | `mp3`, `m4a`, `opus`, `flac`, `wav`, `mp4`, `mkv`, `webm` | `mp3` | Output format. |
+| `quality` | `128`, `192`, `256`, `320` | `192` | Audio bitrate in kbps, for `mp3` and `m4a`. |
 | `resolution` | `480`, `720`, `1080`, `1440`, `2160`, `best` | `1080` | Maximum video height. |
-| `metadata` | `true`, `false` | `true` | Embeds the title, artist and cover art. Cover art isn't supported in `wav` and `webm`. |
-| `allow_playlists` | `true`, `false` | `false` | Downloads the whole playlist when a link points to one. When off, a video link that also names a playlist downloads just the video, and links to a playlist or channel itself are refused. |
+| `metadata` | `true`, `false` | `true` | Embeds the title, artist and cover art. |
+| `allow_playlists` | `true`, `false` | `false` | Downloads the whole playlist when a link points to one. |
 | `remove_sponsors` | `true`, `false` | `true` | Cuts sponsor, interaction reminder, intro and outro segments using SponsorBlock. |
-| `embed_lyrics` | `true`, `false` | `false` | Embeds the video's hand-written captions: as lyrics in audio files, or as subtitle tracks in video files. Only works when the video has captions. |
-| `ffmpeg_path` | `auto` or a path | `auto` | Where to find FFmpeg. `auto` searches as described in [Prerequisites](#prerequisites). |
-| `output_dir` | a folder | `~/Downloads/yt-fetch` | Where downloads are saved. `~` and environment variables like `%USERPROFILE%` are expanded, and relative paths are resolved from the current folder. The `YT_FETCH_OUTPUT_DIR` environment variable, when set, is used instead of this setting. |
+| `embed_lyrics` | `true`, `false` | `false` | Embeds the video's captions as lyrics. |
+| `ffmpeg_path` | `auto` or a path | `auto` | Where to find FFmpeg. |
+| `output_dir` | a folder | `~/Downloads/yt-fetch` | Where downloads are saved. |
+
+More on each setting:
+
+* **`type`**: `mp4` prefers H.264 for compatibility, and `mkv` takes the best quality in any codec. `webm` uses VP9 and Opus, and re-encodes (slowly) the rare video that doesn't come in those.
+* **`quality`**: not used for `opus`, which is saved exactly as YouTube provides it, or for `flac` and `wav`. YouTube's own audio is around 130 kbps, so higher values and the lossless types give bigger files, not better sound.
+* **`metadata`**: cover art isn't supported in `wav` and `webm`.
+* **`allow_playlists`**: when off, a video link that also names a playlist downloads just the video, and links to a playlist or channel itself are refused.
+* **`remove_sponsors`**: if SponsorBlock can't be reached, the download goes ahead with a warning and nothing is cut.
+* **`embed_lyrics`**: these are the captions someone wrote for the video, not lyrics from a lyrics service, so it only works when the video has them. Audio files get them as a lyrics tag, video files as subtitle tracks.
+* **`ffmpeg_path`**: `auto` searches as described in [Prerequisites](#prerequisites).
+* **`output_dir`**: `~` and environment variables like `%USERPROFILE%` are expanded, and relative paths are resolved from the current folder. The `YT_FETCH_OUTPUT_DIR` environment variable, when set, is used instead of this setting.
 
 ---
 
@@ -110,7 +137,7 @@ Run the container. Downloads are saved to `./downloads` on your machine, and set
 ```bash
 docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config yt-fetch
 ```
-Pre-built container (use a version tag such as `:2.0.0` instead of `:latest` to stay on one release):
+Pre-built container (use a version tag such as `:2.1.0` instead of `:latest` to stay on one release):
 ```bash
 docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config ghcr.io/furkan5e/yt-fetch:latest
 ```
@@ -120,6 +147,8 @@ docker run -it --rm -v "${PWD}/downloads:/downloads" -v yt-fetch-config:/config 
 ```
 The image sets `YT_FETCH_OUTPUT_DIR` to `/downloads`, so downloads land in the mounted folder whatever `output_dir` says.
 
+These commands work as written in PowerShell and bash. In `cmd`, write `%cd%` instead of `${PWD}`.
+
 ---
 
 ## Development
@@ -127,6 +156,7 @@ Run the test suite.
 ```bash
 uv run pytest
 ```
+Found a bug or have an idea? Open an [issue](https://github.com/Furkan5E/YT-Fetch/issues).
 
 ---
 
