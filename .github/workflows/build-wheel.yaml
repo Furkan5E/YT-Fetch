@@ -24,6 +24,10 @@ jobs:
         with:
           python-version: '3.14'
 
+      #a tag only becomes a release if the tests pass on the commit it points at
+      - name: Run tests
+        run: uv run pytest
+
       - name: Build Python packages
         run: uv build
 
